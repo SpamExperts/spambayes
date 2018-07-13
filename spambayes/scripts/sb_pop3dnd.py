@@ -71,7 +71,7 @@ import _thread
 import getopt
 import socket
 import imaplib
-import email.Utils
+import email.utils
 
 import io as StringIO
 
