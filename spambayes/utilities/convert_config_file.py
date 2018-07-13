@@ -21,11 +21,13 @@ Note that around options that change blank lines might move - there isn't
 really an easy way around this, but it's easily fixed by hand, and if you
 don't look at the config file, you'll never know <wink>.
 """
+from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
+from builtins import str
 __author__ = "Tony Meyer, <ta-meyer@ihug.co.nz>"
 __credits__ = "All the Spambayes folk."
 
@@ -44,8 +46,8 @@ from spambayes import Options
 def run():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'vhf:')
-    except getopt.error, msg:
-        print >> sys.stderr, str(msg) + '\n\n' + __doc__
+    except getopt.error as msg:
+        print(str(msg) + '\n\n' + __doc__, file=sys.stderr)
         sys.exit()
 
     filename = "bayescustomize.ini"
@@ -53,7 +55,7 @@ def run():
 
     for opt, arg in opts:
         if opt == '-h':
-            print >>  sys.stderr, __doc__
+            print(__doc__, file=sys.stderr)
             sys.exit()
         elif opt == '-f':
             filename = arg
@@ -62,27 +64,27 @@ def run():
 
     o = Options.OptionsClass()
     if verbose:
-        print "Loading defaults"
+        print("Loading defaults")
     o.load_defaults()
     if verbose:
-        print "Updating file:", filename
+        print("Updating file:", filename)
     if os.path.exists(filename):
         if verbose:
-            print "Merging..."
+            print("Merging...")
         o.merge_file(filename)
     else:
-        print filename, "does not exist; exiting."
+        print(filename, "does not exist; exiting.")
         sys.exit(-1)
     backup_name = filename + ".backup"
     if not os.path.exists(backup_name):
         if verbose:
-            print "Copying file", filename, "to", backup_name
+            print("Copying file", filename, "to", backup_name)
         shutil.copyfile(filename, backup_name)
     if verbose:
-        print "Updating..."
+        print("Updating...")
     o.update_file(filename)
     if verbose:
-        print "Done."
+        print("Done.")
 
 if __name__ == '__main__':
     run()

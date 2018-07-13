@@ -1,4 +1,7 @@
+from __future__ import print_function
+from __future__ import absolute_import
 from __future__ import generators
+from builtins import object
 
 import sys, os
 import win32con
@@ -9,7 +12,7 @@ import winerror
 
 import struct, array
 
-import dlgutils
+from . import dlgutils
 
 from pprint import pprint # debugging only
 verbose = 0
@@ -20,7 +23,7 @@ IIL_UNCHECKED = 1
 IIL_CHECKED = 2
 
 # Helpers for building the folder list
-class FolderSpec:
+class FolderSpec(object):
     def __init__(self, folder_id, name, ignore_eids = None):
         self.folder_id = folder_id
         self.name = name
@@ -29,7 +32,7 @@ class FolderSpec:
 
     def dump(self, level=0):
         prefix = "  " * level
-        print prefix + self.name
+        print(prefix + self.name)
         for c in self.children:
             c.dump(level+1)
 
@@ -69,7 +72,7 @@ def _BuildFoldersMAPI(manager, folder_spec):
                                        PR_STORE_ENTRYID,
                                        PR_DISPLAY_NAME_A), None, order, 0)
     if verbose:
-        print "Rows for sub-folder of", folder_spec.name, "-", folder_spec.folder_id
+        print("Rows for sub-folder of", folder_spec.name, "-", folder_spec.folder_id)
         pprint(rows)
     for (eid_tag, eid),(storeeid_tag, store_eid), (name_tag, name) in rows:
         # Note the eid we get here is short-term - hence we must
@@ -97,11 +100,11 @@ def _BuildFoldersMAPI(manager, folder_spec):
             else:
                 spec.children = None # Flag as "not yet built"
             children.append(spec)
-        except (pythoncom.com_error, manager.message_store.MsgStoreException), details:
+        except (pythoncom.com_error, manager.message_store.MsgStoreException) as details:
             # Users have reported failure here - it is not clear if the
             # entire tree is going to fail, or just this folder
-            print "** Unable to open child folder - ignoring"
-            print details
+            print("** Unable to open child folder - ignoring")
+            print(details)
     dlgutils.SetWaitCursor(0)
     return children
 
@@ -111,7 +114,7 @@ def BuildFolderTreeMAPI(session, ignore_ids):
     prop_tags = PR_ENTRYID, PR_DISPLAY_NAME_A
     rows = mapi.HrQueryAllRows(tab, prop_tags, None, None, 0)
     if verbose:
-        print "message store rows:"
+        print("message store rows:")
         pprint(rows)
     for row in rows:
         (eid_tag, eid), (name_tag, name) = row
@@ -122,24 +125,24 @@ def BuildFolderTreeMAPI(session, ignore_ids):
             hr, data = msgstore.GetProps((PR_IPM_SUBTREE_ENTRYID,)+ignore_ids, 0)
             # It appears that not all stores have a subtree.
             if PROP_TYPE(data[0][0]) != PT_BINARY:
-                print "FolderSelector dialog found message store without a subtree - ignoring"
+                print("FolderSelector dialog found message store without a subtree - ignoring")
                 continue
             subtree_eid = data[0][1]
             ignore_eids = [item[1] for item in data[1:] if PROP_TYPE(item[0])==PT_BINARY]
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             # Handle 'expected' errors.
             if details[0]== mapi.MAPI_E_FAILONEPROVIDER:
-                print "A message store is temporarily unavailable - " \
-                      "it will not appear in the Folder Selector dialog"
+                print("A message store is temporarily unavailable - " \
+                      "it will not appear in the Folder Selector dialog")
             else:
                 # Some weird error opening a folder tree
                 # Just print a warning and ignore the tree.
-                print "Failed to open a message store for the FolderSelector dialog"
-                print "Exception details:", details
+                print("Failed to open a message store for the FolderSelector dialog")
+                print("Exception details:", details)
             continue
         folder_id = hex_eid, mapi.HexFromBin(subtree_eid)
         if verbose:
-            print "message store root folder id is", folder_id
+            print("message store root folder id is", folder_id)
 
         spec = FolderSpec(folder_id, name, ignore_eids)
         spec.children = None
@@ -254,7 +257,7 @@ def UnpackTVDISPINFO(lparam):
 #########################################################################
 ## The dialog itself
 #########################################################################
-import dlgcore
+from . import dlgcore
 
 FolderSelector_Parent = dlgcore.TooltipDialog
 class FolderSelector(FolderSelector_Parent):
@@ -338,11 +341,11 @@ class FolderSelector(FolderSelector_Parent):
                                         cItems,
                                         item_id))
         if verbose:
-            print "Inserting item", repr(insert_buf), "-",
+            print("Inserting item", repr(insert_buf), "-", end=' ')
         hitem = win32gui.SendMessage(self.list, commctrl.TVM_INSERTITEM,
                                         0, insert_buf)
         if verbose:
-            print "got back handle", hitem
+            print("got back handle", hitem)
         return hitem
 
     def _InsertSubFolders(self, hParent, folderSpec):
@@ -368,14 +371,14 @@ class FolderSelector(FolderSelector_Parent):
         for folder_id in self.selected_ids:
             try:
                 folder = self.manager.message_store.GetFolder(folder_id)
-            except self.manager.message_store.MsgStoreException, details:
-                print "Can't find a folder to expand:", details
+            except self.manager.message_store.MsgStoreException as details:
+                print("Can't find a folder to expand:", details)
                 folder = None
             while folder is not None:
                 try:
                     parent = folder.GetParent()
-                except self.manager.message_store.MsgStoreException, details:
-                    print "Can't find folder's parent:", details
+                except self.manager.message_store.MsgStoreException as details:
+                    print("Can't find folder's parent:", details)
                     parent = None
                 if parent is not None and \
                    not self.InIDs(parent.GetID(), folders_to_expand):
@@ -503,7 +506,7 @@ class FolderSelector(FolderSelector_Parent):
                         # empty-display-name parent, which should not be
                         # the case.
                         grandparent = parent.GetParent()
-                    except self.manager.message_store.MsgStoreException, details:
+                    except self.manager.message_store.MsgStoreException as details:
                         hr, msg, exc, argErr = details.mapi_exception
                         if hr == winerror.E_ACCESSDENIED:
                             valid = parent is not None
@@ -511,9 +514,9 @@ class FolderSelector(FolderSelector_Parent):
                             raise # but only down a couple of lines...
                     else:
                         valid = parent is not None and grandparent is not None
-                except self.manager.message_store.MsgStoreException, details:
-                    print "Eeek - couldn't get the folder to check " \
-                          "valid:", details
+                except self.manager.message_store.MsgStoreException as details:
+                    print("Eeek - couldn't get the folder to check " \
+                          "valid:", details)
                     valid = False
                 if not valid:
                     if result_valid: # are we the first invalid?
@@ -542,7 +545,7 @@ class FolderSelector(FolderSelector_Parent):
         else:
             win32gui.SendMessage(child, win32con.BM_SETCHECK, self.checkbox_state)
         self.list = self.GetDlgItem("IDC_LIST_FOLDERS")
-        import resources
+        from . import resources
         mod_handle, mod_bmp, extra_flags = \
              resources.GetImageParamsFromBitmapID(self.dialog_parser, "IDB_FOLDERS")
         bitmapMask = win32api.RGB(0,0,255)
@@ -732,7 +735,7 @@ class FolderSelector(FolderSelector_Parent):
                         # And update the tree with the new item
                         buf, extra = PackTVITEM(handle, None, None, name, None, None, None, None)
                         win32gui.SendMessage(self.list, commctrl.TVM_SETITEM, 0, buf)
-                    except pythoncom.com_error, details:
+                    except pythoncom.com_error as details:
                         hr, msg, exc, arg = details
                         if hr == mapi.MAPI_E_COLLISION:
                             user_msg = "A folder with that name already exists"
@@ -763,7 +766,7 @@ def Test():
     ids = [("0000","0000"),] # invalid ID for testing.
     d=FolderSelector(0, mgr, ids, single_select = single_select)
     if d.DoModal() != win32con.IDOK:
-        print "Cancelled"
+        print("Cancelled")
         return
     ids, include_sub = d.GetSelectedIDs()
     d=FolderSelector(0, mgr, ids, single_select = single_select, checkbox_state = include_sub)

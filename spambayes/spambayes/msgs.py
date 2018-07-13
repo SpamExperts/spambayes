@@ -1,4 +1,5 @@
 from __future__ import generators
+from builtins import object
 
 import os
 import random

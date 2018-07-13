@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Test sb_filter script.
 
 import os
@@ -30,9 +31,9 @@ TEMP_DBM_NAME = os.path.join(os.path.dirname(__file__), "temp.dbm")
 # of our copy (whether the tests pass or fail) so it shouldn't
 # be ours.
 if os.path.exists(TEMP_DBM_NAME):
-    print TEMP_DBM_NAME, "already exists.  Please remove this file " \
+    print(TEMP_DBM_NAME, "already exists.  Please remove this file " \
           "before running these tests (a file by that name will be " \
-          "created and destroyed as part of the tests)."
+          "created and destroyed as part of the tests).")
     sys.exit(1)
 
 class HammieFilterTest(unittest.TestCase):

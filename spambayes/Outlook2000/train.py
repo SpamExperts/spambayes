@@ -4,6 +4,7 @@
 # October, 2002
 # Copyright PSF, license under the PSF license
 
+from __future__ import print_function
 import sys
 import traceback
 from win32com.mapi import mapi
@@ -79,10 +80,10 @@ def train_folder(f, isspam, cdata, progress):
             if train_message(message, isspam, cdata):
                 num_added += 1
         except:
-            print "Error training message '%s'" % (message,)
+            print("Error training message '%s'" % (message,))
             traceback.print_exc()
         num += 1
-    print "Checked", num, "in folder", f.name, "-", num_added, "new entries found."
+    print("Checked", num, "in folder", f.name, "-", num_added, "new entries found.")
 
 
 def real_trainer(classifier_data, config, message_store, progress):
@@ -188,7 +189,7 @@ def trainer(mgr, config, progress):
 
 
 def main():
-    print "Sorry - we don't do anything here any more"
+    print("Sorry - we don't do anything here any more")
 
 if __name__ == "__main__":
     main()

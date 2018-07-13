@@ -26,6 +26,7 @@ zope3-clean.mbox is really from the zope3-dev mailing list.
 The Python version matters because the email package varies across releases
 in whether it uses strict or lax parsing.
 """
+from __future__ import print_function
 
 import sys
 import mailbox
@@ -37,9 +38,9 @@ from spambayes.mboxutils import get_message
 program = sys.argv[0]
 
 def usage(code, msg=''):
-    print >> sys.stderr, __doc__
+    print(__doc__, file=sys.stderr)
     if msg:
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
     sys.exit(code)
 
 def count(fname):
@@ -58,7 +59,7 @@ def count(fname):
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hg', ['help'])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     doglob = False
@@ -76,7 +77,7 @@ def main():
 
         for fname in fnames:
             goodn, badn = count(fname)
-            print "%-35s %7d (+ unparseable: %d)" % (fname, goodn, badn)
+            print("%-35s %7d (+ unparseable: %d)" % (fname, goodn, badn))
 
 if __name__ == '__main__':
     main()

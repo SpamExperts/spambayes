@@ -1,9 +1,15 @@
 #! /usr/bin/env python
+from __future__ import division
+from __future__ import print_function
+from builtins import str
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import math
 
 from spambayes.Options import options
 
-class Hist:
+class Hist(object):
     """Simple histograms of float values."""
 
     # Pass None for lo and hi and it will automatically adjust to the min
@@ -48,7 +54,7 @@ class Hist:
         if n & 1:
             self.median = data[n // 2]
         else:
-            self.median = (data[n // 2] + data[(n-1) // 2]) / 2.0
+            self.median = old_div((data[n // 2] + data[(n-1) // 2]), 2.0)
         # Compute mean.
         # Add in increasing order of magnitude, to minimize roundoff error.
         if data[0] < 0.0:
@@ -59,13 +65,13 @@ class Hist:
         sum = 0.0
         for x in data:
             sum += x
-        mean = self.mean = sum / n
+        mean = self.mean = old_div(sum, n)
         # Compute variance.
         var = 0.0
         for x in data:
             d = x - mean
             var += d*d
-        self.var = var / n
+        self.var = old_div(var, n)
         self.sdev = math.sqrt(self.var)
         # Compute percentiles.
         self.pct = pct = []
@@ -104,7 +110,7 @@ class Hist:
     def get_bucketwidth(self):
         lo, hi = self.get_lo_hi()
         span = float(hi - lo)
-        return span / self.nbuckets
+        return old_div(span, self.nbuckets)
 
     # Set instance var nbuckets to the # of buckets, and buckets to a list
     # of nbuckets counts.
@@ -120,7 +126,7 @@ class Hist:
         lo, hi = self.get_lo_hi()
         bucketwidth = self.get_bucketwidth()
         for x in self.data:
-            i = int((x - lo) / bucketwidth)
+            i = int(old_div((x - lo), bucketwidth))
             if i >= nbuckets:
                 i = nbuckets - 1
             elif i < 0:
@@ -140,12 +146,12 @@ class Hist:
         n = self.n
         if n == 0:
             return
-        print "%d items; mean %.2f; sdev %.2f" % (n, self.mean, self.sdev)
-        print "-> <stat> min %g; median %g; max %g" % (self.min,
+        print("%d items; mean %.2f; sdev %.2f" % (n, self.mean, self.sdev))
+        print("-> <stat> min %g; median %g; max %g" % (self.min,
                                                        self.median,
-                                                       self.max)
+                                                       self.max))
         pcts = ['%g%% %g' % x for x in self.pct]
-        print "-> <stat> percentiles:", '; '.join(pcts)
+        print("-> <stat> percentiles:", '; '.join(pcts))
 
         lo, hi = self.get_lo_hi()
         if lo > hi:
@@ -158,7 +164,7 @@ class Hist:
         hunit, r = divmod(biggest, WIDTH)
         if r:
             hunit += 1
-        print "* =", hunit, "items"
+        print("* =", hunit, "items")
 
         # We need ndigits decimal digits to display the largest bucket count.
         ndigits = len(str(biggest))
@@ -179,5 +185,5 @@ class Hist:
         bucketwidth = self.get_bucketwidth()
         for i in range(nbuckets):
             n = self.buckets[i]
-            print format % (lo + i * bucketwidth, n),
-            print '*' * ((n + hunit - 1) // hunit)
+            print(format % (lo + i * bucketwidth, n), end=' ')
+            print('*' * ((n + hunit - 1) // hunit))

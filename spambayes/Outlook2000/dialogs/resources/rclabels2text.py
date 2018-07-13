@@ -1,14 +1,17 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # rclabels2text.py
 # This module is part of the spambayes project, which is Copyright 2003
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
+from builtins import str
 __author__="Adam Walker"
 __doc__=""""
 Pulls labels and captions out of a windows resource file
 and writes them into a text file for spell checking purposes.
 """
 import sys, os, re
-import rcparser
+from . import rcparser
 
 anti_and = re.compile(r"([^\\]*)&([^&]*)");
 anti_nl = re.compile(r"([^\\]*)\\n([^\\])");
@@ -23,7 +26,7 @@ def extract(inputFilename = None, outputFilename = None):
 
     out = open(outputFilename, "wt")
     for dlg_id in rcp._dialogs:
-        print dlg_id
+        print(dlg_id)
         dlg = rcp._dialogs[dlg_id]
         out.write("\n================================================\n")
         out.write("In Dialog: "+str(dlg_id)+" Title: "+str(dlg.caption)+"\n\n")

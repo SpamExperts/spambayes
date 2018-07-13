@@ -1,4 +1,6 @@
+from __future__ import print_function
 from __future__ import generators
+from builtins import range
 # Do the best we can to completely obliterate a field from Outlook!
 
 from win32com.client import Dispatch, constants
@@ -31,7 +33,7 @@ def DeleteField_MAPI(driver, folder, name):
     # OK - now try and wipe the field using MAPI.
     propIds = folder.GetIDsFromNames(((mapi.PS_PUBLIC_STRINGS,name),), 0)
     if PROP_TYPE(propIds[0])==PT_ERROR:
-        print "No such field '%s' in folder" % (name,)
+        print("No such field '%s' in folder" % (name,))
         return 0
     assert propIds[0] == PROP_TAG( PT_UNSPECIFIED, PROP_ID(propIds[0]))
     num_mapi = 0
@@ -69,8 +71,8 @@ def CountFields(folder):
             name = ups.Item(i+1).Name
             fields[name] = fields.get(name, 0)+1
         entry = entries.GetNext()
-    for name, num in fields.items():
-        print name, num
+    for name, num in list(fields.items()):
+        print(name, num)
 
 def ShowFields(folder, field_name):
     field_name = field_name.lower()
@@ -84,7 +86,7 @@ def ShowFields(folder, field_name):
             name = up.Name
             if name.lower()==field_name:
                 subject = entry.Subject.encode("mbcs", "replace")
-                print "%s: %s (%d)" % (subject, up.Value, up.Type)
+                print("%s: %s (%d)" % (subject, up.Value, up.Type))
         entry = entries.GetNext()
 
 def usage(driver):
@@ -104,7 +106,7 @@ If no options are given, prints a summary of field names in the folders.
 %s
 Use the -n option to see all top-level folder names from all stores.""" \
         % (os.path.basename(sys.argv[0]), folder_doc)
-    print msg
+    print(msg)
 
 
 def main():
@@ -115,9 +117,9 @@ def main():
         opts, args = getopt.getopt(sys.argv[1:],
                                    "dnsf:",
                                    ["no-mapi", "no-outlook", "no-folder"])
-    except getopt.error, e:
-        print e
-        print
+    except getopt.error as e:
+        print(e)
+        print()
         usage(driver)
         sys.exit(1)
     delete = show = False
@@ -140,23 +142,23 @@ def main():
             driver.DumpTopLevelFolders()
             sys.exit(1)
         else:
-            print "Invalid arg"
+            print("Invalid arg")
             return
 
     if not folder_names:
         folder_names = ["Inbox"] # Assume this exists!
     if not args:
-        print "No args specified - dumping all unique UserProperty names,"
-        print "and the count of messages they appear in"
+        print("No args specified - dumping all unique UserProperty names,")
+        print("and the count of messages they appear in")
     outlook = None
     for folder_name in folder_names:
         try:
             folder = driver.FindFolder(folder_name)
-        except ValueError, details:
-            print details
-            print "Ignoring folder '%s'" % (folder_name,)
+        except ValueError as details:
+            print(details)
+            print("Ignoring folder '%s'" % (folder_name,))
             continue
-        print "Processing folder '%s'" % (folder_name,)
+        print("Processing folder '%s'" % (folder_name,))
         if not args:
             outlook_folder = driver.GetOutlookFolder(folder)
             CountFields(outlook_folder)
@@ -166,20 +168,20 @@ def main():
                 outlook_folder = driver.GetOutlookFolder(folder)
                 ShowFields(outlook_folder, field_name)
             if delete:
-                print "Deleting field", field_name
+                print("Deleting field", field_name)
                 if do_outlook:
                     outlook_folder = driver.GetOutlookFolder(folder)
                     num = DeleteField_Outlook(outlook_folder, field_name)
-                    print "Deleted", num, "field instances from Outlook"
+                    print("Deleted", num, "field instances from Outlook")
                 if do_mapi:
                     num = DeleteField_MAPI(driver, folder, field_name)
-                    print "Deleted", num, "field instances via MAPI"
+                    print("Deleted", num, "field instances via MAPI")
                 if do_folder:
                     num = DeleteField_Folder(driver, folder, field_name)
                     if num:
-                        print "Deleted property from folder"
+                        print("Deleted property from folder")
                     else:
-                        print "Could not find property to delete in the folder"
+                        print("Could not find property to delete in the folder")
 
 ##        item = folder.Items.Add()
 ##        props = item.UserProperties

@@ -3,6 +3,8 @@
 # Part of the SpamBayes project.  Released under the Python Software
 # Foundation license; see http://www.python.org/
 
+from __future__ import print_function
+from builtins import range
 import os, re, random, textwrap
 
 from spambayes import storage
@@ -82,7 +84,7 @@ def hammer():
 
         # Every thousand messages or so, flush the DB to disk.
         if random.randrange(1000) == 1:
-            print "Flushing."
+            print("Flushing.")
             bayes.store()
             if i > 500:
                 wellFlushed = True
@@ -91,7 +93,7 @@ def hammer():
         isSpam = random.choice([True, False])
         prob = classify(makeMessage(isSpam))
         if i < 10 or i % 100 == 0:
-            print "%6.6d: %d, %.4f" % (i, isSpam, prob)
+            print("%6.6d: %d, %.4f" % (i, isSpam, prob))
 
         # Every thousand messages or so, reopen the DB without closing it.
         # The way this works will open the new instance before the existing
@@ -106,15 +108,15 @@ def hammer():
         # something badly wrong, or they're the result of corrupt databases
         # that aren't caught by bsddb and turned into DBRunRecoveryErrors.
         if wellFlushed and random.randrange(1000) == 1:
-            print "Re-opening."
+            print("Re-opening.")
             bayes = storage.open_storage(FILENAME, True)
 
 
 def test():
     """Print a random ham message and a random spam message."""
-    print makeMessage(False)
-    print
-    print makeMessage(True)
+    print(makeMessage(False))
+    print()
+    print(makeMessage(True))
 
 
 ham = [ {

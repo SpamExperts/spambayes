@@ -76,7 +76,9 @@ command line, each will be processed according to the following rules:
 
 Output is always to standard output as a Unix-style mailbox.
 """
+from __future__ import print_function
 
+from builtins import object
 import os
 import sys
 import getopt
@@ -118,25 +120,25 @@ distribution for other neat mutt tricks.
 """
 
 def examples():
-    print example_doc % globals()
+    print(example_doc % globals())
     sys.exit(0)
 
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     # Include version info in usage
     v = get_current_version()
-    print >> sys.stderr, v.get_long_version("SpamBayes Command Line Filter")
-    print >> sys.stderr
+    print(v.get_long_version("SpamBayes Command Line Filter"), file=sys.stderr)
+    print(file=sys.stderr)
     
     if msg:
-        print >> sys.stderr, msg
-        print >> sys.stderr
-    print >> sys.stderr, __doc__ % globals()
+        print(msg, file=sys.stderr)
+        print(file=sys.stderr)
+    print(__doc__ % globals(), file=sys.stderr)
     sys.exit(code)
 
 def version():
     v = get_current_version()
-    print >> sys.stderr, v.get_long_version("SpamBayes Command Line Filter")
+    print(v.get_long_version("SpamBayes Command Line Filter"), file=sys.stderr)
     sys.exit(0)
 
 class HammieFilter(object):
@@ -252,7 +254,7 @@ def main(profiling=False):
 
     if create_newdb or not os.path.exists(h.dbname):
         h.newdb()
-        print >> sys.stderr, "Created new database in", h.dbname
+        print("Created new database in", h.dbname, file=sys.stderr)
         if create_newdb:
             sys.exit(0)
 

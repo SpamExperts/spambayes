@@ -1,8 +1,11 @@
+from __future__ import print_function
 # configuration classes for the plugin.
 # We used to use a little pickle, but have since moved to a "spambayes.Options"
 # class.
 
 # Hack for testing - setup sys.path
+from builtins import str
+from builtins import object
 if __name__=='__main__':
     try:
         import spambayes.Options
@@ -37,18 +40,18 @@ class FolderIDOption(Option):
         if not is_multi and not value:
             return None
         # Now sure why we get non-strings here for multis
-        if type(value) == types.ListType:
+        if type(value) == list:
             return value
         # If we really care here, it would be fairly easy to use a regex
         # etc to pull these IDs apart.  eval is easier for now :)
         try:
             items = eval(value)
         except:
-            error = "Invalid value (%s:%s)" % (sys.exc_type, sys.exc_value)
+            error = "Invalid value (%s:%s)" % (sys.exc_info()[0], sys.exc_info()[1])
         check_items = []
         if error is None:
             if is_multi:
-                if type(items) != types.ListType:
+                if type(items) != list:
                     error = "Multi-valued ID must yield a list"
                 check_items = items
             else:
@@ -62,9 +65,9 @@ class FolderIDOption(Option):
                     error = "Each ID must be a tuple of 2 strings"
                     break
         if error is not None:
-            print "Failed to convert FolderID value '%r', is_multi=%d" % \
-                  (value, is_multi)
-            print error
+            print("Failed to convert FolderID value '%r', is_multi=%d" % \
+                  (value, is_multi))
+            print(error)
             if is_multi:
                 return []
             else:
@@ -78,13 +81,13 @@ class FolderIDOption(Option):
         return str(self.value)
 
     def multiple_values_allowed(self):
-        return type(self.value)==types.ListType
+        return type(self.value)==list
 
     def is_valid_single(self, value):
         return value is None or \
-               (type(value)==types.TupleType and \
+               (type(value)==tuple and \
                len(value)==2 and \
-               type(value[0])==type(value[1])==types.StringType)
+               type(value[0])==type(value[1])==bytes)
 
 defaults = {
     "General" : (
@@ -318,7 +321,7 @@ defaults = {
 }
 
 # A simple container that provides "." access to items
-class SectionContainer:
+class SectionContainer(object):
     def __init__(self, options, section):
         self.__dict__['_options'] = options
         self.__dict__['_section'] = section
@@ -327,7 +330,7 @@ class SectionContainer:
     def __setattr__(self, attr, val):
         return self._options.set(self._section, attr, val)
 
-class OptionsContainer:
+class OptionsContainer(object):
     def __init__(self, options):
         self.__dict__['_options'] = options
     def __getattr__(self, attr):
@@ -337,9 +340,9 @@ class OptionsContainer:
                 container = SectionContainer(self._options, key)
                 self.__dict__[attr] = container
                 return container
-        raise AttributeError, "Options has no section '%s'" % attr
+        raise AttributeError("Options has no section '%s'" % attr)
     def __setattr__(self, attr, val):
-        raise AttributeError, "No section [%s]" % attr
+        raise AttributeError("No section [%s]" % attr)
     # and delegate a few methods so this object can be used in place of
     # a real options object. maybe should add this to getattr. do we want all?
     def get_option(self, section, name):
@@ -357,7 +360,7 @@ def MigrateOptions(options):
 
 # Old code when we used a pickle.  Still needed so old pickles can be
 # loaded, and moved to the new options file format.
-class _ConfigurationContainer:
+class _ConfigurationContainer(object):
     def __init__(self, **kw):
         self.__dict__.update(kw)
     def __setstate__(self, state):
@@ -365,11 +368,11 @@ class _ConfigurationContainer:
     def _dump(self, thisname="<root>", level=0):
         import pprint
         prefix = "  " * level
-        print "%s%s:" % (prefix, thisname)
-        for name, ob in self.__dict__.items():
+        print("%s%s:" % (prefix, thisname))
+        for name, ob in list(self.__dict__.items()):
             d = getattr(ob, "_dump", None)
             if d is None:
-                print "%s %s: %s" % (prefix, name, pprint.pformat(ob))
+                print("%s %s: %s" % (prefix, name, pprint.pformat(ob)))
             else:
                 d(name, level+1)
 
@@ -383,56 +386,56 @@ if __name__=='__main__':
     options.merge_files(['delme.cfg'])
     c = OptionsContainer(options)
     f = options.get("Training", "ham_folder_ids")
-    print "Folders before set are", f
+    print("Folders before set are", f)
     for i in f:
-        print i, type(i)
+        print(i, type(i))
     new_folder_ids = [('000123','456789'), ('ABCDEF', 'FEDCBA')]
     options.set("Training", "ham_folder_ids", new_folder_ids)
     f = options.get("Training", "ham_folder_ids")
-    print "Folders after set are", f
+    print("Folders after set are", f)
     for i in f:
-        print i, type(i)
+        print(i, type(i))
 
     try:
         c.filter.oops = "Foo"
     except (AttributeError,KeyError): # whatever :)
         pass
     else:
-        print "ERROR: I was able to set an invalid sub-property!"
+        print("ERROR: I was able to set an invalid sub-property!")
 
     try:
         c.oops = "Foo"
     except (AttributeError,KeyError): # whatever :)
         pass
     else:
-        print "ERROR: I was able to set an invalid top-level property!"
+        print("ERROR: I was able to set an invalid top-level property!")
 
     # Test single ID folders.
     if c.filter.unsure_folder_id is not None:
-        print "It appears we loaded a folder ID - resetting"
+        print("It appears we loaded a folder ID - resetting")
         c.filter.unsure_folder_id = None
     unsure_id = c.filter.unsure_folder_id
-    if unsure_id is not None: raise ValueError, "unsure_id wrong (%r)" % (c.filter.unsure_folder_id,)
+    if unsure_id is not None: raise ValueError("unsure_id wrong (%r)" % (c.filter.unsure_folder_id,))
     unsure_id = c.filter.unsure_folder_id = ('12345', 'abcdef')
-    if unsure_id != c.filter.unsure_folder_id: raise ValueError, "unsure_id wrong (%r)" % (c.filter.unsure_folder_id,)
+    if unsure_id != c.filter.unsure_folder_id: raise ValueError("unsure_id wrong (%r)" % (c.filter.unsure_folder_id,))
     c.filter.unsure_folder_id = None
-    if c.filter.unsure_folder_id is not None: raise ValueError, "unsure_id wrong (%r)" % (c.filter.unsure_folder_id,)
+    if c.filter.unsure_folder_id is not None: raise ValueError("unsure_id wrong (%r)" % (c.filter.unsure_folder_id,))
 
     options.set("Filter", "filter_now", True)
-    print "Filter_now from container is", c.filter.filter_now
+    print("Filter_now from container is", c.filter.filter_now)
     options.set("Filter", "filter_now", False)
-    print "Filter_now from container is now", c.filter.filter_now
+    print("Filter_now from container is now", c.filter.filter_now)
     c.filter.filter_now = True
-    print "Filter_now from container is finally", c.filter.filter_now
-    print "Only unread is", c.filter_now.only_unread
+    print("Filter_now from container is finally", c.filter.filter_now)
+    print("Only unread is", c.filter_now.only_unread)
     v = r"/foo/bar"
     c.general.data_directory=v
-    if c.general.data_directory!=v: print "Bad directory!", c.general.data_directory
+    if c.general.data_directory!=v: print("Bad directory!", c.general.data_directory)
     v = r"c:\test directory\some sub directory"
     c.general.data_directory=v
-    if c.general.data_directory!=v: print "Bad directory!", c.general.data_directory
+    if c.general.data_directory!=v: print("Bad directory!", c.general.data_directory)
     v = r"\\server\c$"
     c.general.data_directory=v
-    if c.general.data_directory!=v: print "Bad directory!", c.general.data_directory
+    if c.general.data_directory!=v: print("Bad directory!", c.general.data_directory)
     options.update_file("delme.cfg")
-    print "Created 'delme.cfg'"
+    print("Created 'delme.cfg'")

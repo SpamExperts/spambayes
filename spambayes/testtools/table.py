@@ -11,6 +11,8 @@ one column in the table.
 Optional argument -m shows a final column with the mean value of each
 statistic.
 """
+from __future__ import division
+from __future__ import print_function
 
 # Return
 #  (
@@ -28,6 +30,7 @@ statistic.
 #   spam score deviations for all runs,
 # )
 # from summary file f.
+from past.utils import old_div
 def suck(f):
     hamdevall = spamdevall = (0.0, 0.0)
     cost = 0.0
@@ -47,7 +50,7 @@ def suck(f):
         if line.startswith('-> <stat> tested'):
             # <stat> tested 1910 hams & 948 spams against 2741 hams & 948 spams
             #      1      2    3    4 5   6
-            print line,
+            print(line, end=' ')
 
         elif line.find(' items; mean ') > 0 and line.find('for all runs') > 0:
             # <stat> Ham scores for all runs: 2741 items; mean 0.86; sdev 6.28
@@ -185,47 +188,47 @@ def table():
         tssdev += spamdevall[1]
         meand += "%12.2f" % (spamdevall[0] - hamdevall[0])
         tmeand += (spamdevall[0] - hamdevall[0])
-        k = (spamdevall[0] - hamdevall[0]) / (spamdevall[1] + hamdevall[1])
+        k = old_div((spamdevall[0] - hamdevall[0]), (spamdevall[1] + hamdevall[1]))
         kval  += "%12.2f" % k
         tkval  += k
 
     nfiles = len(fileargs)
     if nfiles and showMean:
-        fptot += "%12d"   % (tfptot/nfiles)
-        fpper += "%12.2f" % (tfpper/nfiles)
-        fntot += "%12d"   % (tfntot/nfiles)
-        fnper += "%12.2f" % (tfnper/nfiles)
-        untot += "%12d"   % (tuntot/nfiles)
-        unper += "%12.2f" % (tunper/nfiles)
-        rcost += "%12s"   % ("$%.2f" % (trcost/nfiles))
-        bcost += "%12s"   % ("$%.2f" % (tbcost/nfiles))
-        hmean += "%12.2f" % (thmean/nfiles)
-        hsdev += "%12.2f" % (thsdev/nfiles)
-        smean += "%12.2f" % (tsmean/nfiles)
-        ssdev += "%12.2f" % (tssdev/nfiles)
-        meand += "%12.2f" % (tmeand/nfiles)
-        kval  += "%12.2f" % (tkval/nfiles)
+        fptot += "%12d"   % (old_div(tfptot,nfiles))
+        fpper += "%12.2f" % (old_div(tfpper,nfiles))
+        fntot += "%12d"   % (old_div(tfntot,nfiles))
+        fnper += "%12.2f" % (old_div(tfnper,nfiles))
+        untot += "%12d"   % (old_div(tuntot,nfiles))
+        unper += "%12.2f" % (old_div(tunper,nfiles))
+        rcost += "%12s"   % ("$%.2f" % (old_div(trcost,nfiles)))
+        bcost += "%12s"   % ("$%.2f" % (old_div(tbcost,nfiles)))
+        hmean += "%12.2f" % (old_div(thmean,nfiles))
+        hsdev += "%12.2f" % (old_div(thsdev,nfiles))
+        smean += "%12.2f" % (old_div(tsmean,nfiles))
+        ssdev += "%12.2f" % (old_div(tssdev,nfiles))
+        meand += "%12.2f" % (old_div(tmeand,nfiles))
+        kval  += "%12.2f" % (old_div(tkval,nfiles))
 
-    print fname
+    print(fname)
     if len(fnam2.strip()) > 0:
-        print fnam2
-    print ratio
+        print(fnam2)
+    print(ratio)
     if len(rat2.strip()) > 0:
-        print rat2
-    print fptot
-    print fpper
-    print fntot
-    print fnper
-    print untot
-    print unper
-    print rcost
-    print bcost
-    print hmean
-    print hsdev
-    print smean
-    print ssdev
-    print meand
-    print kval
+        print(rat2)
+    print(fptot)
+    print(fpper)
+    print(fntot)
+    print(fnper)
+    print(untot)
+    print(unper)
+    print(rcost)
+    print(bcost)
+    print(hmean)
+    print(hsdev)
+    print(smean)
+    print(ssdev)
+    print(meand)
+    print(kval)
 
 if __name__ == "__main__":
     table()

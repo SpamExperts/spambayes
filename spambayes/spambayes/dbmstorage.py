@@ -1,5 +1,7 @@
 """Wrapper to open an appropriate dbm storage type."""
 
+from future import standard_library
+standard_library.install_aliases()
 from spambayes.Options import options
 import sys
 import whichdb

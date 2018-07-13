@@ -71,12 +71,14 @@ To Do:
     o Suggestions?
 
 '''
+from __future__ import print_function
+from __future__ import generators
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
-from __future__ import generators
+from builtins import object
 
 __author__ = "Tim Stone <tim@fourstonesExpressions.com>"
 __credits__ = "Richie Hindle, Tim Peters, all the spambayes contributors."
@@ -89,7 +91,7 @@ from spambayes.Options import options
 SPAM = True
 HAM = False
 
-class Corpus:
+class Corpus(object):
     '''An observable dictionary of Messages'''
 
     def __init__(self, factory, cacheSize=-1):
@@ -113,7 +115,7 @@ class Corpus:
         '''Add a Message to this corpus'''
 
         if options["globals", "verbose"]:
-            print 'adding message %s to corpus' % (message.key())
+            print('adding message %s to corpus' % (message.key()))
 
         self.cacheMessage(message)
 
@@ -129,7 +131,7 @@ class Corpus:
         '''Remove a Message from this corpus'''
         key = message.key()
         if options["globals", "verbose"]:
-            print 'removing message %s from corpus' % (key,)
+            print('removing message %s from corpus' % (key,))
         self.unCacheMessage(key)
         del self.msgs[key]
 
@@ -144,7 +146,7 @@ class Corpus:
         key = message.key()
 
         if options["globals", "verbose"]:
-            print 'placing %s in corpus cache' % (key,)
+            print('placing %s in corpus cache' % (key,))
 
         self.msgs[key] = message
 
@@ -161,7 +163,7 @@ class Corpus:
         # This method should probably not be overridden
 
         if options["globals", "verbose"]:
-            print 'Flushing %s from corpus cache' % (key,)
+            print('Flushing %s from corpus cache' % (key,))
 
         try:
             ki = self.keysInMemory.index(key)
@@ -202,14 +204,14 @@ class Corpus:
 
     def keys(self):
         '''Message keys in the Corpus'''
-        return self.msgs.keys()
+        return list(self.msgs.keys())
 
     def __contains__(self, other):
-        return other in self.msgs.values()
+        return other in list(self.msgs.values())
 
     def __iter__(self):
         '''Corpus is iterable'''
-        for key in self.keys():
+        for key in list(self.keys()):
             yield self[key]
 
     def __str__(self):
@@ -229,7 +231,7 @@ class Corpus:
         return msg
 
 
-class ExpiryCorpus:
+class ExpiryCorpus(object):
     '''Mixin Class - Corpus of "young" file system artifacts'''
 
     def __init__(self, expireBefore):
@@ -239,7 +241,7 @@ class ExpiryCorpus:
 
     def removeExpiredMessages(self):
         '''Kill expired messages'''
-        
+
         # Only check for expired messages after this time.  We set this to the
         # closest-to-expiry message's expiry time, so that this method can be
         # called very regularly, and most of the time it will just immediately
@@ -248,12 +250,12 @@ class ExpiryCorpus:
             return
 
         self.expiry_due = time.time() + self.expireBefore
-        for key in self.keys()[:]:
+        for key in list(self.keys())[:]:
             msg = self[key]
             timestamp = msg.createTimestamp()
             if timestamp < time.time() - self.expireBefore:
                 if options["globals", "verbose"]:
-                    print 'message %s has expired' % (msg.key(),)
+                    print('message %s has expired' % (msg.key(),))
                 from spambayes.storage import NO_TRAINING_FLAG
                 self.removeMessage(msg, observer_flags=NO_TRAINING_FLAG)
             elif timestamp + self.expireBefore < self.expiry_due:
@@ -268,4 +270,4 @@ class MessageFactory(object):
 
 
 if __name__ == '__main__':
-    print >> sys.stderr, __doc__
+    print(__doc__, file=sys.stderr)

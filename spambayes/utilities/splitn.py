@@ -38,7 +38,10 @@ number of messages.  spam.mbox is not altered.  In addition, the seed for
 the random number generator is forced to 123, so that while the split is
 random, it's reproducible.
 """
+from __future__ import print_function
 
+from builtins import str
+from builtins import range
 import sys
 import random
 import mailbox
@@ -49,15 +52,15 @@ from spambayes import mboxutils
 program = sys.argv[0]
 
 def usage(code, msg=''):
-    print >> sys.stderr, __doc__ % globals()
+    print(__doc__ % globals(), file=sys.stderr)
     if msg:
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
     sys.exit(code)
 
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hn:s:v', ['help'])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     n = None
@@ -92,11 +95,11 @@ def main():
         counter += 1
         if verbose:
             if counter % 100 == 0:
-                print '.',
+                print('.', end=' ')
 
     if verbose:
-        print
-        print counter, "messages split into", n, "files"
+        print()
+        print(counter, "messages split into", n, "files")
     infile.close()
     for f in outfiles:
         f.close()

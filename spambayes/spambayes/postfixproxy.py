@@ -5,7 +5,9 @@ Proxy class used to insert Spambayes training between two Postfix servers.
 
 For details, see <http://www.postfix.org/SMTPD_PROXY_README.html>.
 """
+from __future__ import print_function
 
+from builtins import object
 import os
 # This module is generally going to be imported from smtpd which will be run
 # as the main program and thus be named __main__.  Importing smtpd directly
@@ -80,14 +82,14 @@ class SpambayesProxy(smtpd.PureProxy):
             try:
                 if prob >= self.spam_cutoff:
                     self.log_message(data)
-                    print >> smtpd.DEBUGSTREAM, 'probable spam: %.2f' % prob
+                    print('probable spam: %.2f' % prob, file=smtpd.DEBUGSTREAM)
                     return '503 Error: probable spam'
 
                 refused = self._deliver(mailfrom, rcpttos, data)
                 t4 = time.time()
                 # TBD: what to do with refused addresses?
-                print >> smtpd.DEBUGSTREAM, 'we got some refusals:', refused
-                print >> smtpd.DEBUGSTREAM, 'deliver time:', t4-t3
+                print('we got some refusals:', refused, file=smtpd.DEBUGSTREAM)
+                print('deliver time:', t4-t3, file=smtpd.DEBUGSTREAM)
             finally:
-                print >> smtpd.DEBUGSTREAM, 'parse time:', t2-t1
-                print >> smtpd.DEBUGSTREAM, 'score time:', t3-t2
+                print('parse time:', t2-t1, file=smtpd.DEBUGSTREAM)
+                print('score time:', t3-t2, file=smtpd.DEBUGSTREAM)

@@ -38,11 +38,15 @@ forwarding/bouncing them.
 To use, enter the required SMTP server data in your configuration file and
 run sb_server.py
 """
+from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
+from builtins import zip
+from builtins import map
+from builtins import object
 __author__ = "Tony Meyer <ta-meyer@ihug.co.nz>"
 __credits__ = "Tim Stone, all the Spambayes folk."
 
@@ -257,8 +261,8 @@ class BayesSMTPProxyListener(Dibbler.Listener):
         proxyArgs = (serverName, serverPort, trainer)
         Dibbler.Listener.__init__(self, proxyPort, BayesSMTPProxy,
                                   proxyArgs)
-        print 'SMTP Listener on port %s is proxying %s:%d' % \
-               (_addressPortStr(proxyPort), serverName, serverPort)
+        print('SMTP Listener on port %s is proxying %s:%d' % \
+               (_addressPortStr(proxyPort), serverName, serverPort))
 
 
 class BayesSMTPProxy(SMTPProxyBase):
@@ -419,7 +423,7 @@ class SMTPTrainer(object):
         if use_cached:
             id = self.extractSpambayesID(msg)
             if id is None:
-                print "Could not extract id"
+                print("Could not extract id")
                 return
             self.train_cached_message(id, isSpam)
         # Otherwise, train on the forwarded/bounced message.
@@ -445,9 +449,9 @@ class SMTPTrainer(object):
     def train_cached_message(self, id, isSpam):
         if not self.train_message_in_pop3proxy_cache(id, isSpam) and \
            not self.train_message_on_imap_server(id, isSpam):
-            print "Could not find message (%s); perhaps it was " \
+            print("Could not find message (%s); perhaps it was " \
                   "deleted from the POP3Proxy cache or the IMAP " \
-                  "server.  This means that no training was done." % (id, )
+                  "server.  This means that no training was done." % (id, ))
 
     def train_message_in_pop3proxy_cache(self, id, isSpam):
         if self.state is None:
@@ -501,10 +505,10 @@ def LoadServerInfo():
             servers.append((server, int(port)))
     if options["smtpproxy", "listen_ports"]:
         splitPorts = options["smtpproxy", "listen_ports"]
-        proxyPorts = map(_addressAndPort, splitPorts)
+        proxyPorts = list(map(_addressAndPort, splitPorts))
     if len(servers) != len(proxyPorts):
-        print "smtpproxy:remote_servers & smtpproxy:listen_ports are " + \
-              "different lengths!"
+        print("smtpproxy:remote_servers & smtpproxy:listen_ports are " + \
+              "different lengths!")
         sys.exit()
     return servers, proxyPorts
 

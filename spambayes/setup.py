@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
+from builtins import input
 import os
 import sys
 
 from setuptools import setup, find_packages
 
 if sys.version_info < (2, 4):
-    print "Error: You need at least Python 2.4 to use SpamBayes."
-    print "You're running version %s." % sys.version
+    print("Error: You need at least Python 2.4 to use SpamBayes.")
+    print("You're running version %s." % sys.version)
     sys.exit(0)
 
 # Install
@@ -40,19 +42,19 @@ class install_scripts(parent):
             s = os.path.join(self.install_dir, s)
             for e in (".py", ".pyc", ".pyo"):
                 if os.path.exists(s+e):
-                    print >> sys.stderr, "Error: old script", s+e,
-                    print >> sys.stderr, "still exists."
+                    print("Error: old script", s+e, end=' ', file=sys.stderr)
+                    print("still exists.", file=sys.stderr)
                     err = True
         if err:
-            print >>sys.stderr, "Do you want to delete these scripts? (y/n)"
-            answer = raw_input("")
+            print("Do you want to delete these scripts? (y/n)", file=sys.stderr)
+            answer = input("")
             if answer == "y":
                 for s in self.old_scripts:
                     s = os.path.join(self.install_dir, s)
                     for e in (".py", ".pyc", ".pyo"):
                         try:
                             os.remove(s+e)
-                            print "Removed", s+e
+                            print("Removed", s+e)
                         except OSError:
                             pass
         return parent.run(self)
@@ -67,8 +69,8 @@ class sdist(sdist_parent):
         retval = sdist_parent.run(self)
         for archive in self.get_archive_files():
             data = file(archive, "rb").read()
-            print '\n', archive, "\n\tMD5:", md5.md5(data).hexdigest()
-            print "\tLength:", len(data)
+            print('\n', archive, "\n\tMD5:", md5.md5(data).hexdigest())
+            print("\tLength:", len(data))
         return retval
         
 scripts=['scripts/sb_client.py',

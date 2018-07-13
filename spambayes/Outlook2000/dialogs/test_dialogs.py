@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Test code for the SpamBayes dialogs.
 import sys, os
 if __name__=='__main__':
@@ -22,7 +23,7 @@ if __name__=='__main__':
     else:
         ShowDialog(0, mgr, mgr.config, idd)
     if "-d" in sys.argv:
-        print "Dumping(but not saving) new manager configuration:"
-        print mgr.options.display()
-        print "-- end of configuration --"
+        print("Dumping(but not saving) new manager configuration:")
+        print(mgr.options.display())
+        print("-- end of configuration --")
     mgr.Close()

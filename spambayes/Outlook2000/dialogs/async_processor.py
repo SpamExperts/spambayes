@@ -1,10 +1,16 @@
+from __future__ import division
+from __future__ import print_function
+from __future__ import absolute_import
 # An async command processor
-from dlgutils import *
+from builtins import range
+from builtins import object
+from past.utils import old_div
+from .dlgutils import *
 import win32gui, win32api, win32con, commctrl
 import win32process
 import time
 
-import processors
+from . import processors
 
 verbose = 0
 
@@ -18,7 +24,7 @@ MYWM_SETERROR = win32con.WM_USER+13
 MYWM_FINISHED = win32con.WM_USER+14
 
 # This is called from another thread - hence we need to jump through hoops!
-class _Progress:
+class _Progress(object):
     def __init__(self, processor):
         self.hdlg = processor.window.hwnd
         self.hprogress = processor.GetControl(processor.statusbar_id)
@@ -64,7 +70,7 @@ class _Progress:
             # Don't let us go beyond our stage max
             self.current_stage_tick += 1
         # Calc how far through this stage.
-        this_prop = float(self.current_stage_tick) / self.current_stage_max
+        this_prop = old_div(float(self.current_stage_tick), self.current_stage_max)
         # How far through the total.
         stage_name, start, end = self._get_current_stage()
         # Calc the perc of the total control.
@@ -74,7 +80,7 @@ class _Progress:
         # user knows the process has actually started.)
         control_tick = max(1,int(total_prop * self.total_control_ticks))
         if verbose:
-            print "Tick", self.current_stage_tick, "is", this_prop, "through the stage,", total_prop, "through the total - ctrl tick is", control_tick
+            print("Tick", self.current_stage_tick, "is", this_prop, "through the stage,", total_prop, "through the total - ctrl tick is", control_tick)
         win32api.PostMessage(self.hprogress, commctrl.PBM_SETPOS, control_tick)
 
     def _get_stage_text(self, text):
@@ -130,7 +136,7 @@ class AsyncCommandProcessor(processors.CommandButtonProcessor):
             while self.running:
                 win32gui.PumpWaitingMessages(0,-1)
                 if i % 100 == 0:
-                    print "Still waiting for async process to finish..."
+                    print("Still waiting for async process to finish...")
                 time.sleep(0.01)
                 i += 1
         return True
@@ -152,7 +158,7 @@ class AsyncCommandProcessor(processors.CommandButtonProcessor):
         elif msg == MYWM_FINISHED:
             self.OnFinished(wparam, lparam)
         else:
-            raise RuntimeError, "Not one of my messages??"
+            raise RuntimeError("Not one of my messages??")
 
     def OnFinished(self, wparam, lparam):
         self.seen_finished = True
@@ -244,13 +250,13 @@ if __name__=='__main__':
             self.current_stage = 0
             self.set_stages( (("", 1.0),) )
 
-    print "Single stage test"
+    print("Single stage test")
     p = HackProgress()
     p.set_max_ticks(10)
     for i in range(10):
         p.tick()
 
-    print "First stage test"
+    print("First stage test")
     p = HackProgress()
     stages = ("Stage 1", 0.2), ("Stage 2", 0.8)
     p.set_stages(stages)
@@ -262,7 +268,7 @@ if __name__=='__main__':
     p.set_max_ticks(20)
     for i in range(20):
         p.tick()
-    print "Second stage test"
+    print("Second stage test")
     p = HackProgress()
     stages = ("Stage 1", 0.9), ("Stage 2", 0.1)
     p.set_stages(stages)
@@ -272,7 +278,7 @@ if __name__=='__main__':
     p.set_max_ticks(2)
     for i in range(2):
         p.tick()
-    print "Third stage test"
+    print("Third stage test")
     p = HackProgress()
     stages = ("Stage 1", 0.9), ("Stage 2", 0.1)
     p.set_stages(stages)
@@ -283,4 +289,4 @@ if __name__=='__main__':
     for i in range(2):
         p.tick()
 
-    print "Done!"
+    print("Done!")

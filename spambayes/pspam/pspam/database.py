@@ -1,3 +1,4 @@
+from builtins import str
 from spambayes.Options import options
 
 import ZODB

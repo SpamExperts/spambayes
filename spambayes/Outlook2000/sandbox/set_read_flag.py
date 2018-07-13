@@ -1,4 +1,5 @@
 from __future__ import generators
+from __future__ import print_function
 # Set items to read/unread
 
 import pythoncom
@@ -31,10 +32,10 @@ def SetReadState(driver, mapi_folder, subject, unread):
         hr, props = item.GetProps((PR_MESSAGE_FLAGS,), 0)
         ((tag, val), ) = props
         if val & MSGFLAG_READ == unread:
-            print "MAPI SetReadState appears to have failed to change the message state"
-            print "Requested set to unread=%s but the MAPI field after was %r" % \
-                    (unread, val)
-    print "Processed", num, "items"
+            print("MAPI SetReadState appears to have failed to change the message state")
+            print("Requested set to unread=%s but the MAPI field after was %r" % \
+                    (unread, val))
+    print("Processed", num, "items")
 
 def usage(driver):
     folder_doc = driver.GetFolderNameDoc()
@@ -49,7 +50,7 @@ matching is substring and ignore-case.
 %s
 Use the -n option to see all top-level folder names from all stores.""" \
     % (os.path.basename(sys.argv[0]),folder_doc)
-    print msg
+    print(msg)
 
 def main():
     driver = mapi_driver.MAPIDriver()
@@ -57,9 +58,9 @@ def main():
     import getopt
     try:
         opts, args = getopt.getopt(sys.argv[1:], "u")
-    except getopt.error, e:
-        print e
-        print
+    except getopt.error as e:
+        print(e)
+        print()
         usage(driver)
         sys.exit(1)
     folder_name = ""
@@ -69,7 +70,7 @@ def main():
         if opt == "-u":
             unread = True
         else:
-            print "Invalid arg"
+            print("Invalid arg")
             return
 
     if not folder_name:
@@ -77,15 +78,15 @@ def main():
 
     subject = " ".join(args)
     if not subject:
-        print "You must specify a subject"
-        print
+        print("You must specify a subject")
+        print()
         usage(driver)
         sys.exit(1)
 
     try:
         folder = driver.FindFolder(folder_name)
-    except ValueError, details:
-        print details
+    except ValueError as details:
+        print(details)
         sys.exit(1)
 
     SetReadState(driver, folder, subject, unread)

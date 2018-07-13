@@ -37,6 +37,7 @@ command line, each will be processed according to the following rules:
     * Otherwise, the filename is treated as a Unix-style mailbox (messages
       begin on a line starting with 'From ').
 """
+from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
@@ -149,7 +150,7 @@ if __name__ == "__main__":
         if opt in ('-m', '--markup'):
             markup = True
         elif opt in ('-h', '--help'):
-            print __doc__
+            print(__doc__)
             sys.exit()
         elif opt in ('-o', '--option'):
             options.set_from_cmdline(arg, sys.stderr)
@@ -162,4 +163,4 @@ if __name__ == "__main__":
     for fname in args:
         mbox = mboxutils.getmbox(fname)
         for msg in mbox:
-            print ShowClues(bayes, msg, markup)
+            print(ShowClues(bayes, msg, markup))

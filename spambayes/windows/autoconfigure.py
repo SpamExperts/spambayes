@@ -41,6 +41,9 @@ To do:
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 __author__ = "Tony Meyer <ta-meyer@ihug.co.nz>"
 __credits__ = "All the Spambayes folk."
 
@@ -56,8 +59,8 @@ import sys
 import types
 import socket
 import shutil
-import StringIO
-import ConfigParser
+import io
+import configparser
 
 try:
     import win32gui
@@ -106,7 +109,7 @@ def configure_eudora(config_location):
     configure SpamBayes to proxy the servers that Eudora was connecting to.
     """
     ini_filename = "%s%seudora.ini" % (config_location, os.sep)
-    c = ConfigParser.ConfigParser()
+    c = configparser.ConfigParser()
     c.read(ini_filename)
 
     translate = {("PopServer", "POPPort") : "pop3proxy",
@@ -126,10 +129,10 @@ def configure_eudora(config_location):
                 p = c.get(sect, "popaccount")
                 c.set(sect, "popaccount", "%s@localhost" % \
                       (p[:p.index('@')],))
-                for (eud_name, eud_port), us_name in translate.items():
+                for (eud_name, eud_port), us_name in list(translate.items()):
                     try:
                         port = c.get(sect, eud_port)
-                    except ConfigParser.NoOptionError:
+                    except configparser.NoOptionError:
                         port = None
 
                     if us_name.lower()[:4] == "pop3":
@@ -249,7 +252,7 @@ def configure_mozilla(config_location):
         if account_type == "pop3":
             new_pref = 'user_pref("mail.server.server%s.%shostname", ' \
                        '"127.0.0.1");' % (server_num, real)
-            if not pop_accounts.has_key(server_num) or real:
+            if server_num not in pop_accounts or real:
                 pop_accounts[server_num] = (new_pref, old_pref,
                                             old_port, server, port)
         elif account_type == "imap":
@@ -257,7 +260,7 @@ def configure_mozilla(config_location):
             pass
 
     proxy_port = pop_proxy_port
-    for num, (pref, old_pref, old_port, server, port) in pop_accounts.items():
+    for num, (pref, old_pref, old_port, server, port) in list(pop_accounts.items()):
         server = "%s:%s" % (server, port)
         proxy_port = move_to_next_free_port(proxy_port)
         port_pref = 'user_pref("mail.server.server%s.port", %s);' % \
@@ -308,7 +311,7 @@ def configure_mozilla(config_location):
                                      server, port)
 
     proxy_port = smtp_proxy_port
-    for num, (pref, old_pref, old_port, server, port) in smtp_accounts.items():
+    for num, (pref, old_pref, old_port, server, port) in list(smtp_accounts.items()):
         server = "%s:%s" % (server, port)
         proxy_port = move_to_next_free_port(proxy_port)
         port_pref = 'user_pref("mail.smtpserver.smtp%s.port", %s);' % \
@@ -365,12 +368,12 @@ def configure_m2(config_location):
     connecting to."""
     ini_filename = os.path.join(config_location, "Mail", "accounts.ini")
     ini_file = file(ini_filename, "r")
-    faked_up = StringIO.StringIO()
+    faked_up = io.StringIO()
     faked_up.write(";") # Missing at the start
     faked_up.write(ini_file.read())
     faked_up.seek(0)
     ini_file.close()
-    c = ConfigParser.ConfigParser()
+    c = configparser.ConfigParser()
     c.readfp(faked_up)
 
     translate = {("Incoming Servername", "Incoming Port") : "pop3proxy",
@@ -384,10 +387,10 @@ def configure_m2(config_location):
     for sect in c.sections():
         if sect.startswith("Account") and sect != "Accounts":
             if c.get(sect, "Incoming Protocol") == "POP":
-                for (m2_name, m2_port), us_name in translate.items():
+                for (m2_name, m2_port), us_name in list(translate.items()):
                     try:
                         port = c.get(sect, m2_port)
-                    except ConfigParser.NoOptionError:
+                    except configparser.NoOptionError:
                         port = None
 
                     if us_name.lower()[:4] == "pop3":
@@ -442,7 +445,7 @@ def configure_outlook_express(unused):
     results = []
     for proto, subkey, account in accounts:
         if proto == "POP3":
-            for (server_key, port_key), sect in translate.items():
+            for (server_key, port_key), sect in list(translate.items()):
                 if sect[:4] == "pop3":
                     default_port = 110
                     pop_proxy = move_to_next_free_port(pop_proxy)
@@ -451,7 +454,7 @@ def configure_outlook_express(unused):
                     default_port = 25
                     smtp_proxy = move_to_next_free_port(smtp_proxy)
                     proxy = smtp_proxy
-                if account.has_key(port_key):
+                if port_key in account:
                     port = account[port_key][0]
                 else:
                     port = default_port
@@ -607,9 +610,9 @@ def configure_pocomail(pocomail_accounts_file):
 
         f.close()
         f = open(pocomail_accounts_file, "w")
-        for accountName in pocomail_accounts.keys():
+        for accountName in list(pocomail_accounts.keys()):
             f.write('[' + accountName + ']\n')
-            for optionName, optionValue in pocomail_accounts[accountName].items():
+            for optionName, optionValue in list(pocomail_accounts[accountName].items()):
                 f.write("%s=%s\n" % (optionName, optionValue))
             f.write('\n')
         f.close()
@@ -640,14 +643,14 @@ def configure_pocomail(pocomail_accounts_file):
                               '"Junk Mail",0,0,,,0,,,move,In,0,0,,0,,,' \
                               'move,In,0,0,,0,,,move,In,0,0,,0,,,move,' \
                               'In,0,0,,0,,,move,In,0,0,1,0'
-            if pocomail_filters.has_key("Incoming") and \
+            if "Incoming" in pocomail_filters and \
                spamBayesFilter not in pocomail_filters["Incoming"]:
                 pocomail_filters["Incoming"].append(spamBayesFilter)
 
             f = open(pocomail_filters_file, "w")
             f.write('{ Filter list generated by PocoMail 3.01 (1661)' \
                     '- Licensed Version}\n')
-            for filterName in pocomail_filters.keys():
+            for filterName in list(pocomail_filters.keys()):
                 f.write('\n[' + filterName + ']\n')
                 for filter in pocomail_filters[filterName]:
                     f.write(filter + '\n')
