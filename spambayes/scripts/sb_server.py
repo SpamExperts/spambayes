@@ -880,7 +880,8 @@ class State:
             sc = get_pathname_option("Storage", "spam_cache")
             hc = get_pathname_option("Storage", "ham_cache")
             uc = get_pathname_option("Storage", "unknown_cache")
-            map(storage.ensureDir, [sc, hc, uc])
+            for d in (sc, hc, uc):
+                storage.ensureDir(d)
             if self.gzipCache:
                 factory = GzipFileMessageFactory()
             else:
