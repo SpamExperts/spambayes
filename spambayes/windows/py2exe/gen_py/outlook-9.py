@@ -1,4 +1,4 @@
-# -*- coding: mbcs -*-
+# -*- coding: windows-1252 -*-
 # Created by makepy.py version 0.4.95
 # By python version 2.4.4 (#71, Feb  5 2007, 15:24:39) [MSC v.1310 32 bit (Intel)]
 # From type library 'msoutl9.olb'
@@ -7778,4 +7778,3 @@ NamesToIIDMap = {
 }
 
 win32com.client.constants.__dicts__.append(constants.__dict__)
-
