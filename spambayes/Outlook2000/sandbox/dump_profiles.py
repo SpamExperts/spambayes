@@ -1,3 +1,4 @@
+from __future__ import print_function
 
 from win32com.client import Dispatch
 from win32com.mapi import mapi
@@ -18,4 +19,4 @@ rows = mapi.HrQueryAllRows(table,
                             0)               # any # of results is fine
 assert len(rows)==1, "Should be exactly one row"
 (tag, val), = rows[0]
-print "Profile name:", val
+print("Profile name:", val)

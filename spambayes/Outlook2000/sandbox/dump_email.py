@@ -1,4 +1,7 @@
 """dump one or more items as an 'email object' to stdout."""
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
 import sys, os
 import optparse
 
@@ -15,7 +18,7 @@ except ImportError:
     from manager import BayesManager
 
 import mapi_driver
-from cStringIO import StringIO
+from io import StringIO
 
 def Dump(driver, manager, mapi_folder, subject, stream=None):
     for item in driver.GetItemsWithValue(mapi_folder, PR_SUBJECT_A, subject):
@@ -23,12 +26,12 @@ def Dump(driver, manager, mapi_folder, subject, stream=None):
         (tag, eid), (tag, store_eid) = props
         eid = mapi.HexFromBin(eid)
         store_eid = mapi.HexFromBin(store_eid)
-        print >> stream, "Dumping message with ID %s/%s" % (store_eid, eid)
+        print("Dumping message with ID %s/%s" % (store_eid, eid), file=stream)
         msm = manager.message_store.GetMessage((store_eid, eid))
         ob = msm.GetEmailPackageObject()
 
-        print >> stream, ob.as_string()
-        print >> stream
+        print(ob.as_string(), file=stream)
+        print(file=stream)
 
 def main():
     driver = mapi_driver.MAPIDriver()
@@ -52,7 +55,7 @@ def main():
     subject = " ".join(args)
     try:
         folder = driver.FindFolder(options.folder)
-    except ValueError, details:
+    except ValueError as details:
         parser.error(details)
 
     stream = None
@@ -65,7 +68,7 @@ def main():
         win32clipboard.OpenClipboard()
         win32clipboard.EmptyClipboard()
         win32clipboard.SetClipboardText(stream.getvalue())
-        print "Output successfuly written to the Windows clipboard"
+        print("Output successfuly written to the Windows clipboard")
 
 if __name__=='__main__':
     main()

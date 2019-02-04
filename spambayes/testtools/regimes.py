@@ -32,13 +32,17 @@ Existing regimes are:
                   example, a user who deletes all mail classified as spam
                   without ever examining it for false positives.
 """
+from __future__ import division
+from __future__ import print_function
 
 ###
 ### This is a training regime for the incremental.py harness.
 ### It does perfect training on all messages.
 ###
 
-class perfect:
+from past.utils import old_div
+from builtins import object
+class perfect(object):
     def __init__(self):
         pass
 
@@ -54,7 +58,7 @@ class perfect:
 ### correction to perfect at the end of each group.
 ###
 
-class corrected:
+class corrected(object):
     def __init__(self):
         self.spam_to_ham = []
         self.ham_to_spam = []
@@ -107,7 +111,7 @@ class balanced_corrected(corrected):
             if ratio > self.ratio_maximum and guess[0] == 1:
                 # Too much ham, and this is ham - don't train.
                 return 0
-            elif ratio < (1/self.ratio_maximum) and guess[0] == -1:
+            elif ratio < (old_div(1,self.ratio_maximum)) and guess[0] == -1:
                 # Too much spam, and this is spam - don't train.
                 return 0
         return corrected.guess_action(self, which, test, guess, actual, msg)
@@ -117,7 +121,7 @@ class balanced_corrected(corrected):
 ### It does perfect training for fp, fn, and unsures.
 ###
 
-class fpfnunsure:
+class fpfnunsure(object):
     def __init__(self):
         pass
 
@@ -134,7 +138,7 @@ class fpfnunsure:
 ### false positives broken.
 ###
 
-class fnunsure:
+class fnunsure(object):
     def __init__(self):
         pass
 
@@ -152,7 +156,7 @@ class fnunsure:
 ### properly classified with extreme confidence.
 ###
 
-class nonedge:
+class nonedge(object):
     def __init__(self):
         pass
 
@@ -173,7 +177,7 @@ class nonedge:
 ### untraining after 120 groups have gone by.
 ###
 
-class expire4months:
+class expire4months(object):
     def __init__(self):
         self.ham = [[]]
         self.spam = [[]]
@@ -194,4 +198,4 @@ class expire4months:
         return actual
 
 if __name__ == "__main__":
-    print __doc__
+    print(__doc__)

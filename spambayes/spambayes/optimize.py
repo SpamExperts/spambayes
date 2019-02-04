@@ -1,4 +1,7 @@
+from __future__ import division
 #
+from builtins import range
+from past.utils import old_div
 __version__ = '$Id$'
 #
 # Optimize any parametric function.
@@ -34,7 +37,7 @@ def SimplexMaximize(var, err, func, convcrit = 0.001, minerr = 0.001):
         for i in range(len(simplex)):
             if i != wi:
                 ave = ave + simplex[i]
-        ave = ave / (len(simplex) - 1)
+        ave = old_div(ave, (len(simplex) - 1))
         worst = numpy.array(simplex[wi])
         # Check for too-small simplex
         simsize = numpy.add.reduce(numpy.absolute(ave - worst))

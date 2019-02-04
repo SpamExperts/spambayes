@@ -1,10 +1,13 @@
+from __future__ import print_function
+from __future__ import absolute_import
 # This module is part of the spambayes project, which is Copyright 2003
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
-from processors import *
-from opt_processors import *
-import wizard_processors as wiz
+from builtins import str
+from .processors import *
+from .opt_processors import *
+from . import wizard_processors as wiz
 
 from dialogs import ShowDialog, MakePropertyPage, ShowWizard
 
@@ -119,7 +122,7 @@ class IntProcessor(OptionControlProcessor):
         str_val = buf[:nchars]
         val = int(str_val)
         if val < 0 or val > 10:
-            raise ValueError, "Value must be between 0 and 10"
+            raise ValueError("Value must be between 0 and 10")
         self.SetOptionValue(val)
     def OnCommand(self, wparam, lparam):
         code = win32api.HIWORD(wparam)
@@ -145,7 +148,7 @@ class FilterEnableProcessor(BoolButtonProcessor):
             reason = self.window.manager.GetDisabledReason()
             if reason is not None:
                 win32gui.SendMessage(self.GetControl(), win32con.BM_SETCHECK, 0)
-                raise ValueError, reason
+                raise ValueError(reason)
         check = not not check # force bool!
         self.SetOptionValue(check)
 
@@ -376,7 +379,7 @@ class ShowWizardCommand(DialogCommand):
         ShowWizard(parent, manager, self.idd, use_existing_config = True)
 
 def WizardFinish(mgr, window):
-    print _("Wizard Done!")
+    print(_("Wizard Done!"))
 
 def WizardTrainer(mgr, config, progress):
     import os, manager, train
@@ -429,7 +432,7 @@ def WizardTrainer(mgr, config, progress):
         mgr.wizard_classifier_data = classifier_data
         mgr.classifier_data = orig_classifier_data
 
-from async_processor import AsyncCommandProcessor
+from .async_processor import AsyncCommandProcessor
 import filter, train
 
 dialog_map = {

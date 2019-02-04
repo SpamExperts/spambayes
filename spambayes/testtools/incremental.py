@@ -9,6 +9,8 @@ Options:
   -r [regime]        Use this regime (default: perfect).
   -s [number]        Run only this set.
 """
+from __future__ import division
+from __future__ import print_function
 
 ###
 ### This is a test harness for doing testing of incremental
@@ -17,6 +19,10 @@ Options:
 ### corrected classes for examples.
 ###
 
+from past.builtins import cmp
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import getopt
 import glob
 import os
@@ -32,7 +38,7 @@ import email
 from email import Message
 from testtools import regimes
 
-class Test:
+class Test(object):
     # Pass a classifier instance (an instance of Bayes).
     # Loop:
     #     # Train the classifer with new ham and spam.
@@ -152,15 +158,15 @@ class Test:
 
     def false_positive_rate(self):
         """Percentage of ham mistakenly identified as spam, in 0.0..100.0."""
-        return self.nham_wrong * 1e2 / (self.nham_tested or 1)
+        return old_div(self.nham_wrong * 1e2, (self.nham_tested or 1))
 
     def false_negative_rate(self):
         """Percentage of spam mistakenly identified as ham, in 0.0..100.0."""
-        return self.nspam_wrong * 1e2 / (self.nspam_tested or 1)
+        return old_div(self.nspam_wrong * 1e2, (self.nspam_tested or 1))
 
     def unsure_rate(self):
-        return ((self.nham_unsure + self.nspam_unsure) * 1e2 /
-                ((self.nham_tested + self.nspam_tested) or 1))
+        return (old_div((self.nham_unsure + self.nspam_unsure) * 1e2,
+                ((self.nham_tested + self.nspam_tested) or 1)))
 
     def false_positives(self):
         return self.ham_wrong_examples
@@ -171,7 +177,7 @@ class Test:
     def unsures(self):
         return self.unsure_examples
 
-class _Example:
+class _Example(object):
     def __init__(self, name, words):
         self.name = name
         self.words = words
@@ -297,7 +303,7 @@ def main():
         elif opt == '-r':
             regime = arg
         elif opt == '-h' or opt == '--help':
-            print __doc__
+            print(__doc__)
             sys.exit()
 
     nsets = len(glob.glob("Data/Ham/Set*"))
@@ -321,7 +327,7 @@ def main():
         # if which is not None and j != which:
         #     continue
         tests.append(Test(classifier.Bayes()))
-        exec """rules.append(regimes.%s())""" % (regime) in globals(), locals()
+        exec("""rules.append(regimes.%s())""" % (regime), globals(), locals())
         nham_tested.append([])
         nham_trained.append([])
         nham_right.append([])
@@ -398,9 +404,9 @@ def main():
     for j in range(0, nsets):
         if which is not None and j != which:
             continue
-        print 'Set %d' % (j + 1)
+        print('Set %d' % (j + 1))
         for k in range(0, len(nham_tested[j])):
-            print '%d %d %d %d %d %d %d %d %d %d' % (
+            print('%d %d %d %d %d %d %d %d %d %d' % (
                 nham_tested[j][k],
                 nham_trained[j][k],
                 nham_right[j][k],
@@ -411,10 +417,10 @@ def main():
                 nspam_right[j][k],
                 nspam_wrong[j][k],
                 nspam_unsure[j][k]
-            )
-        print
+            ))
+        print()
 
-    print '$ end'
+    print('$ end')
 
 if __name__ == '__main__':
     main()

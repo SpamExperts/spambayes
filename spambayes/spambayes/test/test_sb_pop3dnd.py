@@ -1,9 +1,11 @@
 # Test sb_pop3dnd script.
 
+from future import standard_library
+standard_library.install_aliases()
 import sys
 import email
 import time
-import thread
+import _thread
 import imaplib
 import unittest
 
@@ -42,11 +44,11 @@ class IMAPMessageTest(unittest.TestCase):
         # We get them in lowercase, because this is a twisted
         # requirement.
         headers = msg.getHeaders(False)
-        for k, v in correct_msg.items():
+        for k, v in list(correct_msg.items()):
             self.assertEqual(headers[k.lower()], v)
         # Should work the same with negate
         headers = msg.getHeaders(True)
-        for k, v in correct_msg.items():
+        for k, v in list(correct_msg.items()):
             self.assertEqual(headers[k.lower()], v)
 
     def testGetIndividualHeaders(self):
@@ -61,7 +63,7 @@ class IMAPMessageTest(unittest.TestCase):
         # Negate should get all the other headers.
         headers = msg.getHeaders(True, "SUBJECT")
         self.assert_("subject" not in headers)
-        for k, v in correct_msg.items():
+        for k, v in list(correct_msg.items()):
             if k == "Subject":
                 continue
             self.assertEqual(headers[k.lower()], v)
@@ -162,7 +164,7 @@ class IMAPMessageTest(unittest.TestCase):
         correct_msg = email.message_from_string(good1)
         headers = msg.headers()
         correct_headers = "\r\b".join(["%s: %s" % (k, v) \
-                                       for k, v in correct_msg.items()])
+                                       for k, v in list(correct_msg.items())])
 
 
 class DynamicIMAPMessageTest(unittest.TestCase):
@@ -221,5 +223,5 @@ if __name__=='__main__':
         from spambayes import asyncore
         asyncore.loop()
     TestListener()
-    thread.start_new_thread(runTestServer, ())
+    _thread.start_new_thread(runTestServer, ())
     sb_test_support.unittest_main(argv=sys.argv + ['suite'])

@@ -1,3 +1,4 @@
+from __future__ import print_function
 # This module provides helper classes for various structs (currently only
 # OPENFILENAME) that need to be passed to Win32 api functions as strings.
 #
@@ -5,6 +6,7 @@
 # by Telion <telionce@yahoo.com> to the PythonCE mailing list.
 #     http://mail.python.org/pipermail/pythonce/2002-October/000204.html
 
+from builtins import object
 import struct, array
 import win32gui
 
@@ -49,9 +51,9 @@ class cStruct(object):
         t = struct.unpack(self.fs, self.data)
         ii = 0
         for i in self.nlst:
-            print i, "=", t[ii]
+            print(i, "=", t[ii])
             ii += 1
-        print "fs =", self.fs
+        print("fs =", self.fs)
         return
 
 
@@ -94,19 +96,19 @@ class OPENFILENAME(cStruct):
         return win32gui.PyGetString(self.fn_buf_addr)
 
     def setTitle(self, title):
-        if isinstance(title, unicode):
+        if isinstance(title, str):
             title = title.encode("mbcs")
         self.title_buf = array.array("c", title+'\0')
         self.lpstrTitle = self.title_buf.buffer_info()[0]
 
     def setInitialDir(self, initialDir):
-        if isinstance(initialDir, unicode):
+        if isinstance(initialDir, str):
             initialDir = initialDir.encode("mbcs")
         self.initialDir_buf = array.array("c", initialDir+'\0')
         self.lpstrInitialDir = self.initialDir_buf.buffer_info()[0]
 
     def setFilter(self, fileFilter):
-        if isinstance(fileFilter, unicode):
+        if isinstance(fileFilter, str):
             fileFilter = fileFilter.encode("mbcs")
         fileFilter = fileFilter.replace('|', '\0') + '\0'
         self.fileFilter_buf = array.array("c", fileFilter+'\0')

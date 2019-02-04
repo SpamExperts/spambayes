@@ -16,11 +16,15 @@ Usage:
 
 Any other options runs this in the standard Python unittest form.
 """
+from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-4
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import str
 __author__ = "Tony Meyer <ta-meyer@ihug.co.nz>"
 __credits__ = "Richie Hindle, Mark Hammond, all the SpamBayes folk."
 
@@ -62,7 +66,7 @@ import socket
 import getopt
 import operator
 import unittest
-import thread
+import _thread
 import smtplib
 
 import sb_test_support
@@ -120,7 +124,7 @@ class TestSMTPServer(Dibbler.BrighterAsyncChat):
         """Asynchat override."""
         try:
             return Dibbler.BrighterAsyncChat.recv(self, buffer_size)
-        except socket.error, e:
+        except socket.error as e:
             if e[0] == 10035:
                 return ''
             raise
@@ -194,7 +198,7 @@ class SMTPProxyTest(unittest.TestCase):
         smtpServer.connect(('localhost', 8025))
         try:
             response = smtpServer.recv(100)
-        except socket.error, e:
+        except socket.error as e:
             if e[0] == 10035:
                 # non-blocking socket so that the recognition
                 # can proceed, so this doesn't mean much
@@ -211,7 +215,7 @@ class SMTPProxyTest(unittest.TestCase):
         proxy.connect(('localhost', 8026))
         try:
             response = proxy.recv(100)
-        except socket.error, e:
+        except socket.error as e:
             if e[0] == 10035:
                 # non-blocking socket so that the recognition
                 # can proceed, so this doesn't mean much
@@ -227,7 +231,7 @@ class SMTPProxyTest(unittest.TestCase):
         proxy.connect(('localhost', 8025))
         try:
             response = proxy.recv(100)
-        except socket.error, e:
+        except socket.error as e:
             if e[0] == 10053:
                 # Socket is dead, which is what we want.
                 pass
@@ -236,7 +240,7 @@ class SMTPProxyTest(unittest.TestCase):
         proxy.send("quit\r\n")
         try:
             response = proxy.recv(100)
-        except socket.error, e:
+        except socket.error as e:
             if e[0] == 10053:
                 # Socket is dead, which is what we want.
                 pass
@@ -268,13 +272,13 @@ def run():
     # Read the arguments.
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'ht')
-    except getopt.error, msg:
-        print >>sys.stderr, str(msg) + '\n\n' + __doc__
+    except getopt.error as msg:
+        print(str(msg) + '\n\n' + __doc__, file=sys.stderr)
         sys.exit()
 
     for opt, arg in opts:
         if opt == '-h':
-            print >>sys.stderr, __doc__
+            print(__doc__, file=sys.stderr)
             sys.exit()
         elif opt == '-t':
             state.isTest = True
@@ -283,7 +287,7 @@ def run():
     state.createWorkers()
 
     if state.runTestServer:
-        print "Running a test SMTP server on port 8025..."
+        print("Running a test SMTP server on port 8025...")
         TestListener()
         asyncore.loop()
     else:
@@ -297,8 +301,8 @@ def run():
             trainer = SMTPTrainer(Classifier(), state)
             BayesSMTPProxyListener('localhost', 8025, ('', 8026), trainer)
             Dibbler.run()
-        thread.start_new_thread(runTestServer, ())
-        thread.start_new_thread(runProxy, ())
+        _thread.start_new_thread(runTestServer, ())
+        _thread.start_new_thread(runProxy, ())
         sb_test_support.unittest_main(argv=sys.argv + ['suite'])
 
 

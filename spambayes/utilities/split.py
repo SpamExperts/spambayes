@@ -24,7 +24,9 @@ messages will go to file1 and (100 - percent) % of messages will go to file2.
 percent is a floating point number between 1 and 99.  sourcembox is a Unix
 mailbox file.  All arguments except -h/--help are required.
 """
+from __future__ import print_function
 
+from builtins import str
 import sys
 import random
 import mailbox
@@ -37,9 +39,9 @@ program = sys.argv[0]
 
 
 def usage(code, msg=''):
-    print >> sys.stderr, __doc__
+    print(__doc__, file=sys.stderr)
     if msg:
-        print >> sys.stderr, msg
+        print(msg, file=sys.stderr)
     sys.exit(code)
 
 
@@ -47,7 +49,7 @@ def usage(code, msg=''):
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'h', ['help'])
-    except getopt.error, msg:
+    except getopt.error as msg:
         usage(1, msg)
 
     bin1 = bin2 = percentage = mboxfile = None

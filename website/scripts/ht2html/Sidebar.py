@@ -1,19 +1,23 @@
 """Sidebar generator.
 """
+from __future__ import print_function
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 import sys
 from types import StringType
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 # a useful constant
 BLANKCELL = (None, '&nbsp;')
 
 
 
-class Sidebar:
+class Sidebar(object):
     def __init__(self, links):
         """Initialize the Sidebar instance.
 
@@ -52,12 +56,12 @@ class Sidebar:
         """ % (self.get_lightshade(), self.empty_tag_end)
 
     def __start_table(self):
-        print '<!-- start of sidebar table -->'
-        print '<table width="100%" border="0" cellspacing="0" cellpadding="3"'
-        print 'class="sidebar"       bgcolor="%s">' % self.get_bgcolor()
+        print('<!-- start of sidebar table -->')
+        print('<table width="100%" border="0" cellspacing="0" cellpadding="3"')
+        print('class="sidebar"       bgcolor="%s">' % self.get_bgcolor())
 
     def __finish(self):
-        print '</table><!-- end of sidebar table -->'
+        print('</table><!-- end of sidebar table -->')
 
     def __do_link(self):
         done_one = 0
@@ -66,12 +70,12 @@ class Sidebar:
                 # category header
                 if done_one:
                     # get some separation between header and last item
-                    print '<tr><td %s>&nbsp;' % (self.getSidebarNormalAttrs())
+                    print('<tr><td %s>&nbsp;' % (self.getSidebarNormalAttrs()))
                 else:
                     done_one = 1
-                print '<tr><td %s>'% ( self.getSidebarHeaderAttrs())
-                print item
-                print '</font></b></td></tr>'
+                print('<tr><td %s>'% ( self.getSidebarHeaderAttrs()))
+                print(item)
+                print('</font></b></td></tr>')
             else:
                 if len(item) == 3:
                     url, text, extra = item
@@ -82,9 +86,9 @@ class Sidebar:
                     s = text
                 else:
                     s = '<a href="%s">%s</a>' % (url, text)
-                print '<tr><td %s >' % (self.getSidebarNormalAttrs())
-                print '%s%s' % (s, extra)
-                print '</td></tr>'
+                print('<tr><td %s >' % (self.getSidebarNormalAttrs()))
+                print('%s%s' % (s, extra))
+                print('</td></tr>')
 
 
 from Skeleton import _Skeleton
@@ -138,4 +142,4 @@ if __name__ == '__main__':
          ('pp.html', '[Python Powered]'),
          ])
 
-    print t.makepage()
+    print(t.makepage())

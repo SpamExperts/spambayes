@@ -1,3 +1,4 @@
+from __future__ import absolute_import
 # rc2py.py
 # This module is part of the spambayes project, which is Copyright 2003
 # The Python Software Foundation and is covered by the Python Software
@@ -8,7 +9,7 @@ Converts an .rc windows resource source file into a python source file
 with the same basic public interface as the rcparser module.
 """
 import sys, os, stat
-import rcparser
+from . import rcparser
 
 def convert(inputFilename = None, outputFilename = None,
             enableGettext = True):

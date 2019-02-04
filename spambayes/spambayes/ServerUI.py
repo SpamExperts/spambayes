@@ -20,11 +20,13 @@ The following functions are currently included:
 To do:
  o Suggestions?
 """
+from __future__ import absolute_import
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
+from builtins import range
 __author__ = "Tony Meyer <ta-meyer@ihug.co.nz>"
 __credits__ = "All the Spambayes folk."
 
@@ -85,10 +87,10 @@ class ServerUserInterface(UserInterface.UserInterface):
         or restores the defaults."""
         # Reload the options.
         self.state.bayes.store()
-        import Options
+        from . import Options
         Options.load_options()
         global options
-        from Options import options
+        from .Options import options
 
         # Recreate the state.
         self.state = self.state_recreator()

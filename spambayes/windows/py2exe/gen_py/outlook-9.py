@@ -4,6 +4,8 @@
 # From type library 'msoutl9.olb'
 # On Mon Mar 26 16:02:37 2007
 """Microsoft Outlook 9.0 Object Library"""
+from builtins import str
+from builtins import object
 makepy_version = '0.4.95'
 python_version = 0x20404f0
 
@@ -24,7 +26,7 @@ MinorVersion = 0
 LibraryFlags = 8
 LCID = 0x0
 
-class constants:
+class constants(object):
 	olForward                     =0x2        # from enum OlActionCopyLike
 	olReply                       =0x0        # from enum OlActionCopyLike
 	olReplyAll                    =0x1        # from enum OlActionCopyLike
@@ -359,7 +361,7 @@ class Actions(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class AddressEntries(DispatchBaseClass):
@@ -433,7 +435,7 @@ class AddressEntries(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class AddressEntry(DispatchBaseClass):
@@ -535,10 +537,10 @@ class AddressLists(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
-class ApplicationEvents:
+class ApplicationEvents(object):
 	CLSID = CLSID_Sink = IID('{0006304E-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{0006F03A-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -657,7 +659,7 @@ class Attachments(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class Exception(DispatchBaseClass):
@@ -709,10 +711,10 @@ class Exceptions(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
-class ExplorerEvents:
+class ExplorerEvents(object):
 	CLSID = CLSID_Sink = IID('{0006304F-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063050-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -762,7 +764,7 @@ class ExplorerEvents:
 #	def OnFolderSwitch(self):
 
 
-class ExplorersEvents:
+class ExplorersEvents(object):
 	CLSID = CLSID_Sink = IID('{00063078-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063053-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -798,7 +800,7 @@ class ExplorersEvents:
 #	def OnNewExplorer(self, Explorer=defaultNamedNotOptArg):
 
 
-class FoldersEvents:
+class FoldersEvents(object):
 	CLSID = CLSID_Sink = IID('{00063076-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063051-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -891,7 +893,7 @@ class FormDescription(DispatchBaseClass):
 		"Version": ((13057, LCID, 4, 0),()),
 	}
 
-class InspectorEvents:
+class InspectorEvents(object):
 	CLSID = CLSID_Sink = IID('{0006307D-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063058-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -931,7 +933,7 @@ class InspectorEvents:
 #	def OnActivate(self):
 
 
-class InspectorsEvents:
+class InspectorsEvents(object):
 	CLSID = CLSID_Sink = IID('{00063079-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063054-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -967,7 +969,7 @@ class InspectorsEvents:
 #	def OnNewInspector(self, Inspector=defaultNamedNotOptArg):
 
 
-class ItemEvents:
+class ItemEvents(object):
 	CLSID = CLSID_Sink = IID('{0006303A-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00061051-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -1031,7 +1033,7 @@ class ItemEvents:
 #	def OnCustomAction(self, Action=defaultNamedNotOptArg, Response=defaultNamedNotOptArg, Cancel=defaultNamedNotOptArg):
 
 
-class ItemsEvents:
+class ItemsEvents(object):
 	CLSID = CLSID_Sink = IID('{00063077-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063052-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -1134,7 +1136,7 @@ class Links(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class MAPIFolder(DispatchBaseClass):
@@ -1201,7 +1203,7 @@ class MAPIFolder(DispatchBaseClass):
 		"WebViewURL": ((12563, LCID, 4, 0),()),
 	}
 
-class NameSpaceEvents:
+class NameSpaceEvents(object):
 	CLSID = CLSID_Sink = IID('{0006308C-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{0006308B-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -1263,7 +1265,7 @@ class OutlookBarGroup(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1271,7 +1273,7 @@ class OutlookBarGroup(DispatchBaseClass):
 	def __int__(self, *args):
 		return int(self.__call__(*args))
 
-class OutlookBarGroupsEvents:
+class OutlookBarGroupsEvents(object):
 	CLSID = CLSID_Sink = IID('{0006307B-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063056-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -1311,7 +1313,7 @@ class OutlookBarGroupsEvents:
 #	def OnBeforeGroupAdd(self, Cancel=defaultNamedNotOptArg):
 
 
-class OutlookBarPaneEvents:
+class OutlookBarPaneEvents(object):
 	CLSID = CLSID_Sink = IID('{0006307A-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063055-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -1372,7 +1374,7 @@ class OutlookBarShortcut(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1380,7 +1382,7 @@ class OutlookBarShortcut(DispatchBaseClass):
 	def __int__(self, *args):
 		return int(self.__call__(*args))
 
-class OutlookBarShortcutsEvents:
+class OutlookBarShortcutsEvents(object):
 	CLSID = CLSID_Sink = IID('{0006307C-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063057-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -1442,7 +1444,7 @@ class OutlookBarStorage(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1490,7 +1492,7 @@ class Pages(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class Panes(DispatchBaseClass):
@@ -1522,7 +1524,7 @@ class Panes(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class PropertyPage(DispatchBaseClass):
@@ -1590,7 +1592,7 @@ class PropertyPages(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class Recipient(DispatchBaseClass):
@@ -1682,7 +1684,7 @@ class Recipients(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class RecurrencePattern(DispatchBaseClass):
@@ -1772,10 +1774,10 @@ class Selection(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
-class SyncObjectEvents:
+class SyncObjectEvents(object):
 	CLSID = CLSID_Sink = IID('{00063085-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{00063084-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -1852,7 +1854,7 @@ class SyncObjects(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class UserProperties(DispatchBaseClass):
@@ -1905,7 +1907,7 @@ class UserProperties(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class UserProperty(DispatchBaseClass):
@@ -1941,7 +1943,7 @@ class UserProperty(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -2552,7 +2554,7 @@ class _DDocSiteControl(DispatchBaseClass):
 		"ReadOnly": ((-2147356664, LCID, 4, 0),()),
 	}
 
-class _DDocSiteControlEvents:
+class _DDocSiteControlEvents(object):
 	CLSID = CLSID_Sink = IID('{50BB9B50-811D-11CE-B565-00AA00608FAA}')
 	coclass_clsid = IID('{0006F024-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -2607,7 +2609,7 @@ class _DRecipientControl(DispatchBaseClass):
 		"SpecialEffect": ((12, LCID, 4, 0),()),
 	}
 
-class _DRecipientControlEvents:
+class _DRecipientControlEvents(object):
 	CLSID = CLSID_Sink = IID('{D87E7E17-6897-11CE-A6C0-00AA00608FAA}')
 	coclass_clsid = IID('{0006F023-0000-0000-C000-000000000046}')
 	_public_methods_ = [] # For COM Server support
@@ -2949,7 +2951,7 @@ class _Explorers(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class _Folders(DispatchBaseClass):
@@ -3023,7 +3025,7 @@ class _Folders(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class _IDocSiteControl(DispatchBaseClass):
@@ -3160,7 +3162,7 @@ class _Inspectors(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class _Items(DispatchBaseClass):
@@ -3262,7 +3264,7 @@ class _Items(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class _JournalItem(DispatchBaseClass):
@@ -4011,7 +4013,7 @@ class _OutlookBarGroups(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class _OutlookBarPane(DispatchBaseClass):
@@ -4042,7 +4044,7 @@ class _OutlookBarPane(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -4092,7 +4094,7 @@ class _OutlookBarShortcuts(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(80, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class _PostItem(DispatchBaseClass):

@@ -1,20 +1,22 @@
+from __future__ import absolute_import
 # Control Processors for our dialog.
 
 # This module is part of the spambayes project, which is Copyright 2003
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
+from builtins import object
 import win32gui, win32api, win32con
 import commctrl
 import struct, array
-from dlgutils import *
+from .dlgutils import *
 
 # Cache our leaky bitmap handles
 bitmap_handles = {}
 
 # A generic set of "ControlProcessors".  A control processor by itself only
 # does a few basic things.
-class ControlProcessor:
+class ControlProcessor(object):
     def __init__(self, window, control_ids):
         self.control_id = control_ids[0]
         self.other_ids = control_ids[1:]
@@ -43,7 +45,7 @@ class ControlProcessor:
     def GetMessages(self):
         return []
     def OnMessage(self, msg, wparam, lparam):
-        raise RuntimeError, "I don't hook any messages, so I shouldn't be called"
+        raise RuntimeError("I don't hook any messages, so I shouldn't be called")
     def OnOptionChanged(self, option):
         pass
     def OnRButtonUp(self, wparam, lparam):
@@ -54,10 +56,10 @@ class ImageProcessor(ControlProcessor):
         rcp = self.window.manager.dialog_parser;
         bmp_id = int(win32gui.GetWindowText(self.GetControl()))
 
-        if bitmap_handles.has_key(bmp_id):
+        if bmp_id in bitmap_handles:
             handle = bitmap_handles[bmp_id]
         else:
-            import resources
+            from . import resources
             mod_handle, mod_bmp, extra_flags = resources.GetImageParamsFromBitmapID(rcp, bmp_id)
             load_flags = extra_flags|win32con.LR_COLOR|win32con.LR_SHARED
             handle = win32gui.LoadImage(mod_handle, mod_bmp,

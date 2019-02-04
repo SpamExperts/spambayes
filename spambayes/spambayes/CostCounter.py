@@ -1,6 +1,11 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import str
+from past.utils import old_div
+from builtins import object
 from spambayes.Options import options
 
-class CostCounter:
+class CostCounter(object):
     name = "Superclass Cost"
 
     def __init__(self):
@@ -15,7 +20,7 @@ class CostCounter:
     def __str__(self):
         return "%s: $%.4f" % (self.name, self.total)
 
-class CompositeCostCounter:
+class CompositeCostCounter(object):
     def __init__(self, cclist):
         self.clients = cclist
 
@@ -110,7 +115,7 @@ class CountCostCounter(CostCounter):
 
 def zd(x, y):
     if y > 0:
-        return x / y
+        return old_div(x, y)
     else:
         return 0
 
@@ -136,9 +141,9 @@ class FlexCostCounter(CostCounter):
         elif scr > options["Categorization", "spam_cutoff"]:
             return 1
         else:
-            return (scr - options["Categorization", "ham_cutoff"]) / (
+            return old_div((scr - options["Categorization", "ham_cutoff"]), (
                       options["Categorization", "spam_cutoff"] \
-                      - options["Categorization", "ham_cutoff"])
+                      - options["Categorization", "ham_cutoff"]))
 
     def spam(self, scr):
         self.total += (1 - self._lambda(scr)) * options["TestDriver",
@@ -188,4 +193,4 @@ if __name__ == "__main__":
     cc.spam(0.5)
     options["Categorization", "spam_cutoff"] = 0.7
     options["Categorization", "ham_cutoff"] = 0.4
-    print cc
+    print(cc)

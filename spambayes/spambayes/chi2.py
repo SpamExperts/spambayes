@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import range
+from builtins import object
+from past.utils import old_div
 import math as _math
 import random
 
@@ -11,7 +16,7 @@ def chi2Q(x2, v, exp=_math.exp, min=min):
     m = x2 / 2.0
     sum = term = exp(-m)
     for i in range(1, v//2):
-        term *= m / i
+        term *= old_div(m, i)
         sum += term
     # With small x2 and large v, accumulated roundoff error, plus error in
     # the platform exp(), can cause this to spill a few ULP above 1.0.  For
@@ -21,7 +26,7 @@ def chi2Q(x2, v, exp=_math.exp, min=min):
 
 def normZ(z, sqrt2pi=_math.sqrt(2.0*_math.pi), exp=_math.exp):
     "Return value of the unit Gaussian at z."
-    return exp(-z*z/2.0) / sqrt2pi
+    return old_div(exp(-z*z/2.0), sqrt2pi)
 
 def normP(z):
     """Return area under the unit Gaussian from -inf to z.
@@ -45,7 +50,7 @@ def normP(z):
         while sum != sum2:
             sum = sum2
             i += 2.0
-            term *= z2 / i
+            term *= old_div(z2, i)
             sum2 += term
 
     if z >= 0:
@@ -74,7 +79,7 @@ def normIQ(p, sqrt=_math.sqrt, ln=_math.log):
         z = 8.3
     else:
         t = sqrt(-2.0 * ln(p))
-        z = t - (2.30753 + .27061*t) / (1. + .99229*t + .04481*t**2)
+        z = t - old_div((2.30753 + .27061*t), (1. + .99229*t + .04481*t**2))
 
     if flipped:
         z = -z
@@ -87,13 +92,13 @@ def normIP(p):
     """
     z = normIQ(1.0 - p)
     # One Newton step should double the # of good digits.
-    return z + (p - normP(z)) / normZ(z)
+    return z + old_div((p - normP(z)), normZ(z))
 
 def main():
     from spambayes.Histogram import Hist
     import sys
 
-    class WrappedRandom:
+    class WrappedRandom(object):
         # There's no way W-H is equidistributed in 50 dimensions, so use
         # Marsaglia-wrapping to shuffle it more.
 
@@ -104,7 +109,7 @@ def main():
             self.next = baserandom()
 
         def random(self):
-            result = self.next
+            result = self.__next__
             i = int(result * self.n)
             self.next = self.tab[i]
             self.tab[i] = self.baserandom()
@@ -144,28 +149,28 @@ def main():
     s = Hist(20, lo=0.0, hi=1.0)
     score = Hist(20, lo=0.0, hi=1.0)
 
-    for _i in xrange(5000):
-        ps = [random() for _j in xrange(50)]
+    for _i in range(5000):
+        ps = [random() for _j in range(50)]
         s1, h1, score1 = judge(ps + [bias] * warp)
         s.add(s1)
         h.add(h1)
         score.add(score1)
 
-    print "Result for random vectors of 50 probs, +", warp, "forced to", bias
+    print("Result for random vectors of 50 probs, +", warp, "forced to", bias)
 
     # Should be uniformly distributed on all-random data.
-    print
-    print 'H',
+    print()
+    print('H', end=' ')
     h.display()
 
     # Should be uniformly distributed on all-random data.
-    print
-    print 'S',
+    print()
+    print('S', end=' ')
     s.display()
 
     # Distribution doesn't really matter.
-    print
-    print '(S-H+1)/2',
+    print()
+    print('(S-H+1)/2', end=' ')
     score.display()
 
 def showscore(ps, ln=_math.log, ln2=_math.log(2), frexp=_math.frexp):
@@ -186,15 +191,15 @@ def showscore(ps, ln=_math.log, ln2=_math.log(2), frexp=_math.frexp):
     n = len(ps)
     probS = chi2Q(-2*S, 2*n)
     probH = chi2Q(-2*H, 2*n)
-    print "P(chisq >= %10g | v=%3d) = %10g" % (-2*S, 2*n, probS)
-    print "P(chisq >= %10g | v=%3d) = %10g" % (-2*H, 2*n, probH)
+    print("P(chisq >= %10g | v=%3d) = %10g" % (-2*S, 2*n, probS))
+    print("P(chisq >= %10g | v=%3d) = %10g" % (-2*H, 2*n, probH))
 
     S = 1.0 - probS
     H = 1.0 - probH
     score = (S-H + 1.0) / 2.0
-    print "spam prob", S
-    print " ham prob", H
-    print "(S-H+1)/2", score
+    print("spam prob", S)
+    print(" ham prob", H)
+    print("(S-H+1)/2", score)
 
 if __name__ == '__main__':
     main()

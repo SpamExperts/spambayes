@@ -1,3 +1,7 @@
+from __future__ import print_function
+from future import standard_library
+standard_library.install_aliases()
+from builtins import object
 from __future__ import generators
 
 import sys, os, re
@@ -13,9 +17,9 @@ from email.Parser import HeaderParser
 from email.Utils import formatdate
 
 try:
-    from cStringIO import StringIO
+    from io import StringIO
 except ImportError:
-    from StringIO import StringIO
+    from io import StringIO
 
 # MAPI imports etc.
 from win32com.client import Dispatch, constants
@@ -64,7 +68,7 @@ def help_test_suite(checkpoint_name):
             test_suite_failure_count -= 1
             if test_suite_failure_count==0:
                 test_suite_failure_request = None
-        raise test_suite_failure[0], test_suite_failure[1]
+        raise test_suite_failure[0](test_suite_failure[1])
 
 # Exceptions raised by this module.  Raw MAPI exceptions should never
 # be raised to the caller.
@@ -83,7 +87,7 @@ class MsgStoreException(Exception):
          # Python silently consumes exceptions here, and uses
          # <unprintable object>
         except:
-            print "FAILED to str() a MsgStore exception!"
+            print("FAILED to str() a MsgStore exception!")
             import traceback
             traceback.print_exc()
 
@@ -166,7 +170,7 @@ def ReportMAPIError(manager, what, exc_val):
     manager.ReportErrorOnce(err_msg)
 
 # Our objects.
-class MAPIMsgStore:
+class MAPIMsgStore(object):
     # Stash exceptions in the class for ease of use by consumers.
     MsgStoreException = MsgStoreException
     NotFoundException = NotFoundException
@@ -307,23 +311,23 @@ class MAPIMsgStore:
         for folder_id in folder_ids:
             try:
                 folder_id = self.NormalizeID(folder_id)
-            except MsgStoreException, details:
-                print "NOTE: Skipping invalid folder", details
+            except MsgStoreException as details:
+                print("NOTE: Skipping invalid folder", details)
                 continue
             try:
                 folder = self._OpenEntry(folder_id)
                 table = folder.GetContentsTable(0)
-            except pythoncom.com_error, details:
+            except pythoncom.com_error as details:
                 # We will ignore *all* such errors for the time
                 # being, but give verbose details for results we don't
                 # know about
                 if IsNotAvailableCOMException(details):
-                    print "NOTE: Skipping folder for this session - temporarily unavailable"
+                    print("NOTE: Skipping folder for this session - temporarily unavailable")
                 elif IsNotFoundCOMException(details):
-                    print "NOTE: Skipping deleted folder"
+                    print("NOTE: Skipping deleted folder")
                 else:
-                    print "WARNING: Unexpected MAPI error opening folder"
-                    print GetCOMExceptionString(details)
+                    print("WARNING: Unexpected MAPI error opening folder")
+                    print(GetCOMExceptionString(details))
                 continue
             rc, props = folder.GetProps( (PR_DISPLAY_NAME_A,), 0)
             yield MAPIMsgStoreFolder(self, folder_id, props[0][1],
@@ -350,7 +354,7 @@ class MAPIMsgStore:
             folder_id = folder_id[0], props[0][1]
             return MAPIMsgStoreFolder(self, folder_id, props[1][1],
                                   table.GetRowCount(0))
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def GetMessage(self, message_id):
@@ -367,7 +371,7 @@ class MAPIMsgStore:
             mapi_object = self._OpenEntry(message_id)
             hr, data = mapi_object.GetProps(MAPIMsgStoreMsg.message_init_props,0)
             return MAPIMsgStoreMsg(self, data)
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def YieldReceiveFolders(self, msg_class = "IPM.Note"):
@@ -386,9 +390,9 @@ class MAPIMsgStore:
                 folder_eid, ret_class = store.GetReceiveFolder(msg_class, 0)
                 hex_folder_eid = mapi.HexFromBin(folder_eid)
                 hex_store_eid = mapi.HexFromBin(store_eid)
-            except pythoncom.com_error, details:
+            except pythoncom.com_error as details:
                 if not IsNotAvailableCOMException(details):
-                    print "ERROR enumerating a receive folder -", details
+                    print("ERROR enumerating a receive folder -", details)
                 continue
             try:
                 folder = self.GetFolder((hex_store_eid, hex_folder_eid))
@@ -397,8 +401,8 @@ class MAPIMsgStore:
                 # folders with a parent.
                 if folder.GetParent() is not None:
                     yield folder
-            except MsgStoreException, details:
-                print "ERROR opening receive folder -", details
+            except MsgStoreException as details:
+                print("ERROR opening receive folder -", details)
                 # but we just continue
                 continue
 
@@ -423,9 +427,9 @@ def GetPropFromStream(mapi_object, prop_id):
                 break
             chunks.append(chunk)
         return "".join(chunks)
-    except pythoncom.com_error, d:
-        print "Error getting property", mapiutil.GetPropTagName(prop_id), \
-              "from stream:", d
+    except pythoncom.com_error as d:
+        print("Error getting property", mapiutil.GetPropTagName(prop_id), \
+              "from stream:", d)
         return ""
 
 def GetPotentiallyLargeStringProp(mapi_object, prop_id, row):
@@ -440,8 +444,8 @@ def GetPotentiallyLargeStringProp(mapi_object, prop_id, row):
         else:
             tag_name = mapiutil.GetPropTagName(prop_id)
             err_string = mapiutil.GetScodeString(got_val)
-            print "Warning - failed to get property %s: %s" % (tag_name,
-                                                                err_string)
+            print("Warning - failed to get property %s: %s" % (tag_name,
+                                                                err_string))
     else:
         ret = got_val
     return ret
@@ -453,15 +457,15 @@ def GetHTMLFromRTFProperty(mapi_object, prop_tag = PR_RTF_COMPRESSED):
                                               0, 0)
         html_stream = mapi.WrapCompressedRTFStream(rtf_stream, 0)
         html = mapi.RTFStreamToHTML(html_stream)
-    except pythoncom.com_error, details:
+    except pythoncom.com_error as details:
         if not IsNotFoundCOMException(details):
-            print "ERROR getting RTF body", details
+            print("ERROR getting RTF body", details)
         return ""
     # html may be None if RTF not originally from HTML, but here we
     # always want a string
     return html or ''
 
-class MAPIMsgStoreFolder:
+class MAPIMsgStoreFolder(object):
     def __init__(self, msgstore, id, name, count):
         self.msgstore = msgstore
         self.id = id
@@ -519,9 +523,9 @@ class MAPIMsgStoreFolder:
             # top-level folder shown by Outlook.  This folder should *never*
             # be used directly.
             parts = [name]
-            print "WARNING: It appears you are using the top-level root of " \
+            print("WARNING: It appears you are using the top-level root of " \
                   "the information store as a folder.  You probably don't "\
-                  "want to do that"
+                  "want to do that")
         return "/".join(parts)
 
     def _FolderFromMAPIFolder(self, mapifolder):
@@ -551,7 +555,7 @@ class MAPIMsgStoreFolder:
             parent = self.msgstore._OpenEntry(parent_id)
             # Finally get the item itself
             return self._FolderFromMAPIFolder(parent)
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def OpenEntry(self, iid = None, flags = None):
@@ -562,7 +566,7 @@ class MAPIMsgStoreFolder:
             hex_item_id = mapi.HexFromBin(self.id[1])
             hex_store_id = mapi.HexFromBin(self.id[0])
             return self.msgstore.outlook.Session.GetFolderFromID(hex_item_id, hex_store_id)
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def GetMessageGenerator(self, only_filter_candidates = True):
@@ -655,7 +659,7 @@ class MAPIMsgStoreFolder:
         try:
             folder = self.OpenEntry()
             return folder.GetContentsTable(0).GetRowCount(0)
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     # EmptyFolder() *permanently* deletes ALL messages and subfolders from
@@ -668,7 +672,7 @@ class MAPIMsgStoreFolder:
         try:
             folder = self.OpenEntry()
             folder.EmptyFolder(parentWindow, None, FOLDER_DIALOG)
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def DoesFolderHaveOutlookField(self, field_name):
@@ -694,8 +698,8 @@ class MAPIMsgStoreFolder:
             table.SetColumns(cols, 0)
             rows = mapi.HrQueryAllRows(table, cols, restriction, None, 0)
             if len(rows)>1:
-                print "Eeek - only expecting one row from IPC.MS.REN.USERFIELDS"
-                print "got", repr(rows)
+                print("Eeek - only expecting one row from IPC.MS.REN.USERFIELDS")
+                print("got", repr(rows))
                 return None
             if len(rows)==0:
                 # New folders with no userdefined fields do not have such a row,
@@ -703,10 +707,10 @@ class MAPIMsgStoreFolder:
                 return False
             row = rows[0]
             val = GetPotentiallyLargeStringProp(folder, cols[0], row[0])
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
         if type(val) != type(''):
-            print "Value type incorrect - expected string, got", repr(val)
+            print("Value type incorrect - expected string, got", repr(val))
             return None
         return val.find("\0" + field_name) >= 0
 
@@ -726,7 +730,7 @@ class MAPIMsgStoreFolder:
             folder = self.msgstore._OpenEntry(self.id)
             # Nuke my MAPI reference, and set my ID to None
             folder.DeleteMessages(real_ids, 0, None, 0)
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def CreateTemporaryMessage(self, msg_flags = None):
@@ -748,11 +752,11 @@ class MAPIMsgStoreFolder:
             eid = data[0][1]
             storeid = data[1][1]
             msg_id = mapi.HexFromBin(storeid), mapi.HexFromBin(eid)
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
         return self.msgstore.GetMessage(msg_id)
 
-class MAPIMsgStoreMsg:
+class MAPIMsgStoreMsg(object):
     # All the properties we must initialize a message with.
     # These include all the IDs we need, parent IDs, any properties needed
     # to determine if this is a "filterable" message, etc
@@ -963,8 +967,8 @@ class MAPIMsgStoreMsg:
                 pass # Nothing we can fetch :(
             else:
                 if len(rows) > 1:
-                    print "WARNING: Found %d rows with multipart/signed" \
-                          "- using first only" % len(rows)
+                    print("WARNING: Found %d rows with multipart/signed" \
+                          "- using first only" % len(rows))
                 row = rows[0]
                 (attach_num_tag, attach_num), = row
                 assert attach_num_tag != PT_ERROR, \
@@ -1071,7 +1075,7 @@ class MAPIMsgStoreMsg:
             try:
                 help_test_suite("MAPIMsgStoreMsg._EnsureObject")
                 self.mapi_object = self.msgstore._OpenEntry(self.id)
-            except pythoncom.com_error, details:
+            except pythoncom.com_error as details:
                 raise MsgStoreExceptionFromCOMException(details)
 
     def _GetAttachmentsToInclude(self):
@@ -1089,7 +1093,7 @@ class MAPIMsgStoreMsg:
             table = self.mapi_object.GetAttachmentTable(0)
             tags = PR_ATTACH_NUM,PR_ATTACH_MIME_TAG_A,PR_ATTACH_SIZE,PR_ATTACH_DATA_BIN
             attach_rows = mapi.HrQueryAllRows(table, tags, None, None, 0)
-        except pythoncom.com_error, why:
+        except pythoncom.com_error as why:
             attach_rows = []
 
         attachments = []
@@ -1235,7 +1239,7 @@ class MAPIMsgStoreMsg:
             # email.Errors.HeaderParseError: caught above
         except:
             text = '\r\n'.join([header_text, body, html])
-            print "FAILED to create email.message from: ", `text`
+            print("FAILED to create email.message from: ", repr(text))
             raise
 
         return root_msg
@@ -1313,13 +1317,13 @@ class MAPIMsgStoreMsg:
                             text[butcher_pos+1:] + "\n\n"
                 msg = email.message_from_string(butchered)
         except:
-            print "FAILED to create email.message from: ", `text`
+            print("FAILED to create email.message from: ", repr(text))
             raise
 
         if strip_mime_headers:
-            if msg.has_key('content-type'):
+            if 'content-type' in msg:
                 del msg['content-type']
-            if msg.has_key('content-transfer-encoding'):
+            if 'content-transfer-encoding' in msg:
                 del msg['content-transfer-encoding']
 
         return msg
@@ -1353,8 +1357,8 @@ class MAPIMsgStoreMsg:
                 propIds = self.mapi_object.GetIDsFromNames(props, mapi.MAPI_CREATE)
                 type_tag = _MapiTypeMap.get(type(val))
                 if type_tag is None:
-                    raise ValueError, "Don't know what to do with '%r' ('%s')" % (
-                                         val, type(val))
+                    raise ValueError("Don't know what to do with '%r' ('%s')" % (
+                                         val, type(val)))
                 prop = PROP_TAG(type_tag, PROP_ID(propIds[0]))
             help_test_suite("MAPIMsgStoreMsg.SetField")
             if val is None:
@@ -1363,7 +1367,7 @@ class MAPIMsgStoreMsg:
             else:
                 self.mapi_object.SetProps(((prop,val),))
             self.dirty = True
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def GetField(self, prop):
@@ -1384,7 +1388,7 @@ class MAPIMsgStoreMsg:
                     return GetPropFromStream(self.mapi_object, prop)
                 return None
             return val
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def GetReadState(self):
@@ -1402,10 +1406,10 @@ class MAPIMsgStoreMsg:
                 self.mapi_object.SetReadFlag(USE_DEFERRED_ERRORS|CLEAR_READ_FLAG)
             if __debug__:
                 if self.GetReadState() != is_read:
-                    print "MAPI SetReadState appears to have failed to change the message state"
-                    print "Requested set to %s but the MAPI field after was %r" % \
-                          (is_read, self.GetField(PR_MESSAGE_FLAGS))
-        except pythoncom.com_error, details:
+                    print("MAPI SetReadState appears to have failed to change the message state")
+                    print("Requested set to %s but the MAPI field after was %r" % \
+                          (is_read, self.GetField(PR_MESSAGE_FLAGS)))
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def Save(self):
@@ -1416,7 +1420,7 @@ class MAPIMsgStoreMsg:
             help_test_suite("MAPIMsgStoreMsg.Save")
             self.mapi_object.SaveChanges(mapi.KEEP_OPEN_READWRITE)
             self.dirty = False
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def _DoCopyMove(self, folder, isMove):
@@ -1441,7 +1445,7 @@ class MAPIMsgStoreMsg:
             # the item, and set the store_id to the dest folder.
             self.id = None
             self.folder_id = None
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def MoveTo(self, folder):
@@ -1459,13 +1463,13 @@ class MAPIMsgStoreMsg:
     def MoveToReportingError(self, manager, folder):
         try:
             self.MoveTo(folder)
-        except MsgStoreException, details:
+        except MsgStoreException as details:
             ReportMAPIError(manager, _("Moving a message"),
                             details.mapi_exception)
     def CopyToReportingError(self, manager, folder):
         try:
             self.MoveTo(folder)
-        except MsgStoreException, details:
+        except MsgStoreException as details:
             ReportMAPIError(manager, _("Copying a message"),
                             details.mapi_exception)
 
@@ -1492,7 +1496,7 @@ class MAPIMsgStoreMsg:
             prop_tuples = (prop_ids[0],folder.id[0]), (prop_ids[1],folder.id[1])
             self.mapi_object.SetProps(prop_tuples)
             self.dirty = True
-        except pythoncom.com_error, details:
+        except pythoncom.com_error as details:
             raise MsgStoreExceptionFromCOMException(details)
 
     def GetRememberedFolder(self):
@@ -1515,7 +1519,7 @@ class MAPIMsgStoreMsg:
             # Try to get it from the message info database, if possible
             if self.original_folder:
                 return self.msgstore.GetFolder(self.original_folder)
-            print "Error locating origin of message", self
+            print("Error locating origin of message", self)
             return None
 
 def test():
@@ -1524,9 +1528,9 @@ def test():
     folder_id = inbox.Parent.StoreID, inbox.EntryID
     store = MAPIMsgStore()
     for folder in store.GetFolderGenerator([folder_id,], True):
-        print folder
+        print(folder)
         for msg in folder.GetMessageGenerator():
-            print msg
+            print(msg)
     store.Close()
 
 if __name__=='__main__':

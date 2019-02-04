@@ -19,11 +19,18 @@ Usage:
             -t      : Runs a fake POP3 server on port 8110 (for testing).
             -h      : Displays this help message.
 """
+from __future__ import division
+from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-5
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
+from builtins import str
+from builtins import map
+from builtins import range
+from past.utils import old_div
+from functools import reduce
 __author__ = "Richie Hindle <richie@entrian.com>"
 __credits__ = "All the Spambayes folk."
 
@@ -194,7 +201,7 @@ class TestPOP3Server(Dibbler.BrighterAsyncChat):
 
     def onStat(self, command, args):
         """POP3 STAT command."""
-        maildropSize = reduce(operator.add, map(len, self.maildrop))
+        maildropSize = reduce(operator.add, list(map(len, self.maildrop)))
         maildropSize += len(self.maildrop) * len(HEADER_EXAMPLE)
         return "+OK %d %d\r\n" % (len(self.maildrop), maildropSize)
 
@@ -243,7 +250,7 @@ class TestPOP3Server(Dibbler.BrighterAsyncChat):
     def onTop(self, command, args):
         """POP3 RETR command."""
         try:
-            number, lines = map(int, args.split())
+            number, lines = list(map(int, args.split()))
         except ValueError:
             number, lines = -1, -1
         return self._getMessage(number, lines)
@@ -324,7 +331,7 @@ def helper():
     # Stat the mailbox to get the number of messages.
     proxy.send("stat\r\n")
     response = proxy.recv(100)
-    count, totalSize = map(int, response.split()[1:3])
+    count, totalSize = list(map(int, response.split()[1:3]))
     assert count == 3
 
     # Loop through the messages ensuring that they have judgement
@@ -342,7 +349,7 @@ def helper():
     # with a 1-second timeout, the message needs to be significantly longer
     # than 100 characters to ensure that the timeout fires, so we make sure
     # we use a message that's at least 200 characters long.
-    assert len(spam1) >= 2 * (1/PER_CHAR_DELAY)
+    assert len(spam1) >= 2 * (old_div(1,PER_CHAR_DELAY))
     options["pop3proxy", "retrieval_timeout"] = 1
     options["Headers", "include_evidence"] = False
     proxy.send("slow\r\n")
@@ -373,15 +380,15 @@ def test_run():
     # Read the arguments.
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'ht')
-    except getopt.error, msg:
-        print >>sys.stderr, str(msg) + '\n\n' + __doc__
+    except getopt.error as msg:
+        print(str(msg) + '\n\n' + __doc__, file=sys.stderr)
         sys.exit()
 
     state.isTest = True
     runSelfTest = True
     for opt, arg in opts:
         if opt == '-h':
-            print >>sys.stderr, __doc__
+            print(__doc__, file=sys.stderr)
             sys.exit()
         elif opt == '-t':
             state.isTest = True
@@ -391,13 +398,13 @@ def test_run():
     state.createWorkers()
 
     if runSelfTest:
-        print "\nRunning self-test...\n"
+        print("\nRunning self-test...\n")
         state.buildServerStrings()
         helper()
-        print "Self-test passed."   # ...else it would have asserted.
+        print("Self-test passed.")   # ...else it would have asserted.
 
     elif state.runTestServer:
-        print "Running a test POP3 server on port 8110..."
+        print("Running a test POP3 server on port 8110...")
         Listener()
         asyncore.loop()
 

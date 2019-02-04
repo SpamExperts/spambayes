@@ -1,3 +1,5 @@
+from __future__ import print_function
+from builtins import object
 from __future__ import generators
 # Utilities for our sandbox
 
@@ -8,7 +10,7 @@ from win32com.mapi.mapitags import *
 
 from win32com.client import Dispatch
 
-class MAPIDriver:
+class MAPIDriver(object):
     def __init__(self, read_only = False):
         old_cwd = os.getcwd()
         mapi.MAPIInitialize(None)
@@ -59,13 +61,13 @@ class MAPIDriver:
                                         mapi.MDB_NO_MAIL |
                                         mapi.MAPI_DEFERRED_ERRORS)
                 yield store, name, def_store
-            except pythoncom.com_error, details:
+            except pythoncom.com_error as details:
                 hr, msg, exc, arg_err = details
                 if hr== mapi.MAPI_E_FAILONEPROVIDER:
                     # not logged on etc.
                     pass
                 else:
-                    print "Error opening message store", details, "- ignoring"
+                    print("Error opening message store", details, "- ignoring")
 
     def _FindSubfolder(self, store, folder, find_name):
         find_name = find_name.lower()
@@ -86,7 +88,7 @@ class MAPIDriver:
                     store_name = name.lower()
                     break
             if store_name is None:
-                raise RuntimeError, "Can't find a default message store"
+                raise RuntimeError("Can't find a default message store")
             folder_names = names
         else:
             store_name = names[1]
@@ -97,7 +99,7 @@ class MAPIDriver:
                 folder_store = store
                 break
         else:
-            raise ValueError, "The store '%s' can not be located" % (store_name,)
+            raise ValueError("The store '%s' can not be located" % (store_name,))
 
         hr, data = store.GetProps((PR_IPM_SUBTREE_ENTRYID,), 0)
         subtree_eid = data[0][1]
@@ -106,7 +108,7 @@ class MAPIDriver:
         for name in folder_names:
             folder = self._FindSubfolder(folder_store, folder, name)
             if folder is None:
-                raise ValueError, "The subfolder '%s' can not be located" % (name,)
+                raise ValueError("The subfolder '%s' can not be located" % (name,))
         return folder
 
     def GetAllItems(self, folder, mapi_flags = None):
@@ -145,7 +147,7 @@ class MAPIDriver:
             yield item
 
     def DumpTopLevelFolders(self):
-        print "Top-level folder names are:"
+        print("Top-level folder names are:")
         for store, name, is_default in self.GetMessageStores():
             # Find the folder with the content.
             hr, data = store.GetProps((PR_IPM_SUBTREE_ENTRYID,), 0)
@@ -155,7 +157,7 @@ class MAPIDriver:
             table = folder.GetHierarchyTable(0)
             rows = mapi.HrQueryAllRows(table, (PR_DISPLAY_NAME_A), None, None, 0)
             for (name_tag, folder_name), in rows:
-                print " \\%s\\%s" % (name, folder_name)
+                print(" \\%s\\%s" % (name, folder_name))
 
     def GetFolderNameDoc(self):
         def_store_name = "<??unknown??>"
@@ -175,4 +177,4 @@ or
 
 
 if __name__=='__main__':
-    print "This is a utility script for the other scripts in this directory"
+    print("This is a utility script for the other scripts in this directory")

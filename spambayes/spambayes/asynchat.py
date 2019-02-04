@@ -46,6 +46,7 @@ method) up to the terminator, and then control will be returned to
 you - by calling your self.found_terminator() method.
 """
 
+from builtins import object
 import socket
 from spambayes import asyncore
 from collections import deque
@@ -66,10 +67,10 @@ class async_chat (asyncore.dispatcher):
         asyncore.dispatcher.__init__ (self, conn)
 
     def collect_incoming_data(self, data):
-        raise NotImplementedError, "must be implemented in subclass"
+        raise NotImplementedError("must be implemented in subclass")
 
     def found_terminator(self):
-        raise NotImplementedError, "must be implemented in subclass"
+        raise NotImplementedError("must be implemented in subclass")
 
     def set_terminator (self, term):
         "Set the input delimiter.  Can be a fixed string of any length, an integer, or None"
@@ -87,7 +88,7 @@ class async_chat (asyncore.dispatcher):
 
         try:
             data = self.recv (self.ac_in_buffer_size)
-        except socket.error, why:
+        except socket.error as why:
             self.handle_error()
             return
 
@@ -105,7 +106,7 @@ class async_chat (asyncore.dispatcher):
                 # no terminator, collect it all
                 self.collect_incoming_data (self.ac_in_buffer)
                 self.ac_in_buffer = ''
-            elif isinstance(terminator, int) or isinstance(terminator, long):
+            elif isinstance(terminator, int) or isinstance(terminator, int):
                 # numeric terminator
                 n = terminator
                 if lb < n:
@@ -220,7 +221,7 @@ class async_chat (asyncore.dispatcher):
                 if num_sent:
                     self.ac_out_buffer = self.ac_out_buffer[num_sent:]
 
-            except socket.error, why:
+            except socket.error as why:
                 self.handle_error()
                 return
 
@@ -232,7 +233,7 @@ class async_chat (asyncore.dispatcher):
             self.producer_fifo.pop()
 
 
-class simple_producer:
+class simple_producer(object):
 
     def __init__ (self, data, buffer_size=512):
         self.data = data
@@ -248,7 +249,7 @@ class simple_producer:
             self.data = ''
             return result
 
-class fifo:
+class fifo(object):
     def __init__ (self, list=None):
         if not list:
             self.list = deque()

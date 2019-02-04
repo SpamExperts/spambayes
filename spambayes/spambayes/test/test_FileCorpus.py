@@ -1,5 +1,7 @@
 # Test the FileCorpus module.
 
+from builtins import str
+from builtins import object
 import os
 import sys
 import time
@@ -58,7 +60,7 @@ class _FileCorpusBaseTest(unittest.TestCase):
     def _setUpDirectory(self, dirname):
         try:
             os.mkdir(dirname)
-        except OSError, e:
+        except OSError as e:
             if e[0] != errno.EEXIST:
                 raise
 
@@ -71,7 +73,7 @@ class _FileCorpusBaseTest(unittest.TestCase):
     def _tearDownDirectory(self, dirname):
         try:
             flist = os.listdir(dirname)
-        except OSError, e:
+        except OSError as e:
             if e.errno != 3:
                 raise
         else:
@@ -80,7 +82,7 @@ class _FileCorpusBaseTest(unittest.TestCase):
                 os.unlink(fn)
         try:
             os.rmdir(dirname)
-        except OSError, e:
+        except OSError as e:
             if e.errno != 2:
                 raise
 
@@ -91,12 +93,12 @@ class _FileCorpusBaseTest(unittest.TestCase):
 
         try:
             os.unlink('fctestmisc.bayes')
-        except OSError, e:
+        except OSError as e:
             if e.errno != 2:
                 raise
         try:
             os.unlink('fctestclass.bayes')
-        except OSError, e:
+        except OSError as e:
             if e.errno != 2:
                 raise
 

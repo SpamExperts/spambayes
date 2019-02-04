@@ -18,6 +18,8 @@ mailbox type given a mailbox argument.
 
 """
 
+from builtins import str
+from builtins import object
 from __future__ import generators
 
 import os
@@ -29,7 +31,7 @@ import email.Message
 import re
 import traceback
 
-class DirOfTxtFileMailbox:
+class DirOfTxtFileMailbox(object):
     """Directory of files each assumed to contain an RFC-822 message.
 
     If the filename ends with ".emlx", assumes that the file is an
@@ -214,7 +216,7 @@ def as_string(msg, unixfrom=False):
         headers = []
         if unixfrom:
             headers.append(msg.get_unixfrom())
-        for (hdr, val) in msg.items():
+        for (hdr, val) in list(msg.items()):
             headers.append("%s: %s" % (hdr, val))
         headers.append("X-Spambayes-Exception: %s" % excstr)
         parts = ["%s\n" % "\n".join(headers)]

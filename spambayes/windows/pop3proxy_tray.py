@@ -3,11 +3,18 @@
 """A script to provide an icon in the Windows taskbar tray to control the
 POP3 proxy.
 """
+from __future__ import division
+from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
+from future import standard_library
+standard_library.install_aliases()
+from builtins import range
+from builtins import object
+from past.utils import old_div
 __author__ = "Tony Meyer <ta-meyer@ihug.co.nz>, Adam Walker"
 __credits__ = "Mark Hammond, all the Spambayes folk."
 
@@ -17,7 +24,7 @@ __credits__ = "Mark Hammond, all the Spambayes folk."
 import os
 import sys
 import webbrowser
-import thread
+import _thread
 import traceback
 
 verbose = 0
@@ -108,7 +115,7 @@ def IsServerRunningAnywhere():
             return GetLastError()==winerror.ERROR_ALREADY_EXISTS
         finally:
             hmutex.Close()
-    except win32event.error, details:
+    except win32event.error as details:
         if details[0] != winerror.ERROR_ACCESS_DENIED:
             raise
         # Mutex created by some other user - it does exist!
@@ -184,15 +191,15 @@ class MainWindow(object):
         self.started = IsServerRunningAnywhere()
         self.tip = None
         if self.use_service and not self.IsServiceAvailable():
-            print "Service not available. Using thread."
+            print("Service not available. Using thread.")
             self.use_service = False
 
         # Start up sb_server
         if not self.started:
             self.Start()
         else:
-            print "The server is already running externally - not starting " \
-                  "a local server"
+            print("The server is already running externally - not starting " \
+                  "a local server")
 
     def _AddTaskbarIcon(self):
         flags = NIF_ICON | NIF_MESSAGE | NIF_TIP
@@ -203,8 +210,8 @@ class MainWindow(object):
         except win32api_error:
             # Apparently can be seen as XP is starting up.  Certainly can
             # be seen if explorer.exe is not running when started.
-            print "Ignoring error adding taskbar icon - explorer may not " \
-                  "be running (yet)."
+            print("Ignoring error adding taskbar icon - explorer may not " \
+                  "be running (yet).")
             # The TaskbarRestart message will fire in this case, and
             # everything will work out :)
 
@@ -247,10 +254,10 @@ class MainWindow(object):
             if schService:
                 CloseServiceHandle(schService)
             return schService != None
-        except win32api_error, details:
+        except win32api_error as details:
             if details[0] != winerror.ERROR_SERVICE_DOES_NOT_EXIST:
-                print "Unexpected windows error querying for service"
-                print details
+                print("Unexpected windows error querying for service")
+                print(details)
             return False
 
     def GetServiceStatus(self):
@@ -279,7 +286,7 @@ class MainWindow(object):
         dwOldCheckPoint  = ssStatus[5]
 
         while ssStatus[1] == SERVICE_START_PENDING:
-            dwWaitTime = ssStatus[6] / 10;
+            dwWaitTime = old_div(ssStatus[6], 10);
 
             if dwWaitTime < 1000:
                 dwWaitTime = 1000
@@ -318,7 +325,7 @@ class MainWindow(object):
         dwOldCheckPoint  = ssStatus[5]
 
         while ssStatus[1] == SERVICE_STOP_PENDING:
-            dwWaitTime = ssStatus[6] / 10;
+            dwWaitTime = old_div(ssStatus[6], 10);
 
             if dwWaitTime < 1000:
                 dwWaitTime = 1000
@@ -363,7 +370,7 @@ class MainWindow(object):
             # true "running state", not just what we thought it was last.
             self.CheckCurrentState()
             menu = CreatePopupMenu()
-            ids = self.control_functions.keys()
+            ids = list(self.control_functions.keys())
             ids.sort()
             for id in ids:
                 (wording, function) = self.control_functions[id]
@@ -393,7 +400,7 @@ class MainWindow(object):
         try:
             unused, function = self.control_functions[id]
         except KeyError:
-            print "Unknown command -", id
+            print("Unknown command -", id)
             return
         function()
 
@@ -407,9 +414,9 @@ class MainWindow(object):
             try:
                 sb_server.stop()
             except:
-                print "Error stopping proxy at shutdown"
+                print("Error stopping proxy at shutdown")
                 traceback.print_exc()
-                print "Shutting down anyway..."
+                print("Shutting down anyway...")
 
             self.started = False
         DestroyWindow(self.hwnd)
@@ -424,22 +431,22 @@ class MainWindow(object):
             self.have_prepared_state = False
 
     def StartProxyThread(self):
-        thread.start_new_thread(self._ProxyThread, ())
+        _thread.start_new_thread(self._ProxyThread, ())
 
     def Start(self):
         self.CheckCurrentState()
         if self.started:
-            print "Ignoring start request - server already running"
+            print("Ignoring start request - server already running")
             return
         if self.use_service:
-            if verbose: print "Doing 'Start' via service"
+            if verbose: print("Doing 'Start' via service")
             if self.GetServiceStatus() in stoppedStatus:
                 self.StartService()
             else:
-                print "Service was already running - ignoring!"
+                print("Service was already running - ignoring!")
         else:
             # Running it internally.
-            if verbose: print "Doing 'Start' internally"
+            if verbose: print("Doing 'Start' internally")
             if not self.have_prepared_state:
                 try:
                     sb_server.prepare()
@@ -457,7 +464,7 @@ class MainWindow(object):
     def Stop(self):
         self.CheckCurrentState()
         if not self.started:
-            print "Ignoring stop request - server doesn't appear to be running"
+            print("Ignoring stop request - server doesn't appear to be running")
             return
         try:
             use_service = self.use_service
@@ -465,18 +472,18 @@ class MainWindow(object):
                 # XXX - watch out - if service status is "stopping", trying
                 # to start is likely to fail until it actually gets to
                 # "stopped"
-                if verbose: print "Doing 'Stop' via service"
+                if verbose: print("Doing 'Stop' via service")
                 if self.GetServiceStatus() not in stoppedStatus:
                     self.StopService()
                 else:
-                    print "Service was already stopped - weird - falling " \
-                          "back to a socket based quit"
+                    print("Service was already stopped - weird - falling " \
+                          "back to a socket based quit")
                     use_service = False
             if not use_service:
-                if verbose: print "Stopping local server"
+                if verbose: print("Stopping local server")
                 sb_server.stop()
         except:
-            print "There was an error stopping the server"
+            print("There was an error stopping the server")
             traceback.print_exc()
         # but either way, assume it stopped for the sake of our UI
         self.started = False
@@ -525,8 +532,8 @@ class MainWindow(object):
     def ShowHTML(self, url):
         """Displays the main SpamBayes documentation in your Web browser"""
         # Stolen from Outlook's Manager.py
-        import sys, os, urllib
-        if urllib.splittype(url)[0] is None: # just a file spec
+        import sys, os, urllib.request, urllib.parse, urllib.error
+        if urllib.parse.splittype(url)[0] is None: # just a file spec
             if hasattr(sys, "frozen"):
                 # New binary is in ../docs/sb_server relative to executable.
                 fname = os.path.join(os.path.dirname(sys.argv[0]),

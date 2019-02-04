@@ -1,6 +1,9 @@
 """Scores one or more items in your Outlook store."""
+from __future__ import print_function
 # score one or more items, write results to stdout.
 # Helps test new features (eg, OCR) outside the Outlook environment.
+from future import standard_library
+standard_library.install_aliases()
 import sys, os
 import optparse
 
@@ -19,7 +22,7 @@ except ImportError:
 from addin import GetClues
 
 import mapi_driver
-from cStringIO import StringIO
+from io import StringIO
 
 def Score(driver, manager, mapi_folder, subject, options, stream=None):
     num = 0
@@ -32,7 +35,7 @@ def Score(driver, manager, mapi_folder, subject, options, stream=None):
     for item in getter(*getter_args):
         num += 1
         if num % 1000 == 0:
-            print >> sys.stderr, "Processed", num, "items..."
+            print("Processed", num, "items...", file=sys.stderr)
         hr, props = item.GetProps((PR_ENTRYID,PR_STORE_ENTRYID, PR_SUBJECT_A), 0)
         (tag, eid), (tag, store_eid), (tag, sub) = props
         eid = mapi.HexFromBin(eid)
@@ -42,10 +45,10 @@ def Score(driver, manager, mapi_folder, subject, options, stream=None):
 
             manager.classifier_data.message_db.load_msg(msm)
             score = manager.score(msm)
-            if not options.quiet: print "Message %r scored %g" % (sub, score)
+            if not options.quiet: print("Message %r scored %g" % (sub, score))
             if options.show_clues:
                 clues = GetClues(manager, msm)
-                if not options.quiet: print >> stream, clues
+                if not options.quiet: print(clues, file=stream)
             if options.quiet:
                 continue
 
@@ -55,14 +58,14 @@ def Score(driver, manager, mapi_folder, subject, options, stream=None):
                 from spambayes.ImageStripper import crack_images
                 from spambayes.tokenizer import imageparts
                 image_text, image_toks = crack_images(imageparts(eob))
-                print >> stream, "Image text:", repr(image_text)
-                print >> stream, "Image tokens:", repr(image_toks)
+                print("Image text:", repr(image_text), file=stream)
+                print("Image tokens:", repr(image_toks), file=stream)
 
-            print >> stream # blank lines between messages
+            print(file=stream) # blank lines between messages
         except:
-            print >> sys.stderr, "FAILED to convert message:", sub
+            print("FAILED to convert message:", sub, file=sys.stderr)
             raise
-    print >> stream, "Scored", num, "messages."
+    print("Scored", num, "messages.", file=stream)
 
 def main():
     driver = mapi_driver.MAPIDriver()
@@ -99,7 +102,7 @@ def main():
     subject = " ".join(args)
     try:
         folder = driver.FindFolder(options.folder)
-    except ValueError, details:
+    except ValueError as details:
         parser.error(details)
 
     stream = None
@@ -112,7 +115,7 @@ def main():
         win32clipboard.OpenClipboard()
         win32clipboard.EmptyClipboard()
         win32clipboard.SetClipboardText(stream.getvalue())
-        print "Output successfuly written to the Windows clipboard"
+        print("Output successfuly written to the Windows clipboard")
 
 if __name__=='__main__':
     main()

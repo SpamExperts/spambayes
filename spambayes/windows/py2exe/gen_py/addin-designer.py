@@ -4,6 +4,7 @@
 # From type library 'MSADDNDR.DLL'
 # On Mon Mar 26 16:03:36 2007
 """Microsoft Add-In Designer"""
+from builtins import object
 makepy_version = '0.4.95'
 python_version = 0x20404f0
 
@@ -24,7 +25,7 @@ MinorVersion = 0
 LibraryFlags = 8
 LCID = 0x0
 
-class constants:
+class constants(object):
 	ext_cm_AfterStartup           =0x0        # from enum ext_ConnectMode
 	ext_cm_CommandLine            =0x3        # from enum ext_ConnectMode
 	ext_cm_External               =0x2        # from enum ext_ConnectMode
@@ -53,7 +54,7 @@ class IAddinInstance(DispatchBaseClass):
 	_prop_map_put_ = {
 	}
 
-class _IDTExtensibility2:
+class _IDTExtensibility2(object):
 	CLSID = CLSID_Sink = IID('{B65AD801-ABAF-11D0-BB8B-00A0C90F2744}')
 	coclass_clsid = IID('{AC0714F7-3D04-11D1-AE7D-00A0C90F26F4}')
 	_public_methods_ = [] # For COM Server support

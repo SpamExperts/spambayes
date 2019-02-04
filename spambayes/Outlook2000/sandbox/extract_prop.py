@@ -1,3 +1,4 @@
+from __future__ import print_function
 # Extract a property from a message to a file.  This is about the only
 # way to extract huge properties such that the original data is available.
 import sys, os
@@ -54,12 +55,12 @@ def DumpProp(driver, mapi_folder, subject, prop_tag, outfile):
     num = 0
     for item in items:
         if num > 1:
-            print >> sys.stderr, "Warning: More than one matching item - ignoring"
+            print("Warning: More than one matching item - ignoring", file=sys.stderr)
             break
         DumpItemProp(item, prop_tag, outfile)
         num += 1
     if num==0:
-        print >> sys.stderr, "Error: No matching items"
+        print("Error: No matching items", file=sys.stderr)
 
 def usage(driver):
     folder_doc = driver.GetFolderNameDoc()
@@ -75,7 +76,7 @@ matching is substring and ignore-case.
 %s
 Use the -n option to see all top-level folder names from all stores.""" \
     % (os.path.basename(sys.argv[0]),folder_doc)
-    print msg
+    print(msg)
 
 def main():
     driver = mapi_driver.MAPIDriver()
@@ -83,9 +84,9 @@ def main():
     import getopt
     try:
         opts, args = getopt.getopt(sys.argv[1:], "np:f:o:")
-    except getopt.error, e:
-        print e
-        print
+    except getopt.error as e:
+        print(e)
+        print()
         usage(driver)
         sys.exit(1)
     folder_name = prop_name = output_name = ""
@@ -101,7 +102,7 @@ def main():
             driver.DumpTopLevelFolders()
             sys.exit(1)
         else:
-            print "Invalid arg"
+            print("Invalid arg")
             return
 
     if not folder_name:
@@ -109,13 +110,13 @@ def main():
 
     subject = " ".join(args)
     if not subject:
-        print "You must specify a subject"
-        print
+        print("You must specify a subject")
+        print()
         usage(driver)
         sys.exit(1)
     if not prop_name:
-        print "You must specify a property"
-        print
+        print("You must specify a property")
+        print()
         usage(driver)
         sys.exit(1)
     if output_name:
@@ -125,8 +126,8 @@ def main():
 
     try:
         folder = driver.FindFolder(folder_name)
-    except ValueError, details:
-        print details
+    except ValueError as details:
+        print(details)
         sys.exit(1)
 
     DumpProp(driver, folder, subject, prop_name, output_file)

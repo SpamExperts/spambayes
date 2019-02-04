@@ -17,7 +17,14 @@ Options:
     -m MSGS
         Read no more than MSGS messages from mailbox.
 """
+from __future__ import division
+from __future__ import print_function
 
+from builtins import zip
+from builtins import map
+from builtins import range
+from past.utils import old_div
+from builtins import object
 from __future__ import generators
 
 import getopt
@@ -84,7 +91,7 @@ class mbox(object):
 
         i = 0
         while 1:
-            msg = mbox.next()
+            msg = next(mbox)
             if msg is None:
                 return
             i += 1
@@ -98,9 +105,9 @@ def subject(buf):
     return buf[i:j]
 
 def randindices(nelts, nresults):
-    L = range(nelts)
+    L = list(range(nelts))
     random.shuffle(L)
-    chunk = nelts / nresults
+    chunk = old_div(nelts, nresults)
     for i in range(nresults):
         yield set(L[:chunk])
         del L[:chunk]
@@ -113,7 +120,7 @@ def sort(seq):
 def main(args):
     global FMT
 
-    print options.display()
+    print(options.display())
 
     FMT = "unix"
     NSETS = 10
@@ -141,11 +148,11 @@ def main(args):
         nham = min(nham, MAXMSGS)
         nspam = min(nspam, MAXMSGS)
 
-    print "ham", ham, nham
-    print "spam", spam, nspam
+    print("ham", ham, nham)
+    print("spam", spam, nspam)
 
-    ihams = map(tuple, randindices(nham, NSETS))
-    ispams = map(tuple, randindices(nspam, NSETS))
+    ihams = list(map(tuple, randindices(nham, NSETS)))
+    ispams = list(map(tuple, randindices(nspam, NSETS)))
 
     driver = Driver()
 

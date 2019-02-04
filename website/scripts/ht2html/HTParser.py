@@ -18,11 +18,11 @@ class HTParser(rfc822.Message):
         # Massage some standard headers we require.
         #
         # title
-        if not self.has_key('title'):
+        if 'title' not in self:
             parts = self.__filename.split(os.sep)
             self.__extraheaders['title'] = parts[-1]
         # author
-        if not self.has_key('author'):
+        if 'author' not in self:
             if default_author is not None:
                 author = default_author
             else:
@@ -39,7 +39,7 @@ class HTParser(rfc822.Message):
                     author = 'MUST SUPPLY AN AUTHOR'
             self.__extraheaders['author'] = author
         # author email
-        if not self.has_key('author-email'):
+        if 'author-email' not in self:
             if default_email is None:
                 default_email = self['author']
             self.__extraheaders['author-email'] = default_email
@@ -56,9 +56,9 @@ class HTParser(rfc822.Message):
 
     # might be using an older rfc822
     def get(self, name, default=None):
-        if self.has_key(name):
+        if name in self:
             return self.getheader(name)
-        elif self.__extraheaders.has_key(name):
+        elif name in self.__extraheaders:
             return self.__extraheaders[name]
         else:
             return default

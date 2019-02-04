@@ -51,7 +51,7 @@ def main():
 
     # Create HTML page that outline the available options.
     output = open("experimental_options.ht", "w")
-    keys = options._options.keys()
+    keys = list(options._options.keys())
     keys.sort()
     output.write(table_header)
     for sect, opt_name in keys:
@@ -76,7 +76,7 @@ def main():
 
     # Create pre-filled configuration file with comments.
     output = open("experimental.ini", "w")
-    keys = options._options.keys()
+    keys = list(options._options.keys())
     keys.sort()
     currentSection = None
     for sect, opt in keys:

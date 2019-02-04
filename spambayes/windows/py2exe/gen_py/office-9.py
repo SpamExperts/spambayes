@@ -4,6 +4,8 @@
 # From type library 'MSO9.DLL'
 # On Mon Mar 26 16:03:03 2007
 """Microsoft Office 9.0 Object Library"""
+from builtins import str
+from builtins import object
 makepy_version = '0.4.95'
 python_version = 0x20404f0
 
@@ -24,7 +26,7 @@ MinorVersion = 1
 LibraryFlags = 8
 LCID = 0x0
 
-class constants:
+class constants(object):
 	offPropertyTypeBoolean        =0x2        # from enum DocProperties
 	offPropertyTypeDate           =0x3        # from enum DocProperties
 	offPropertyTypeFloat          =0x5        # from enum DocProperties
@@ -1224,7 +1226,7 @@ class Adjustments(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1235,7 +1237,7 @@ class Adjustments(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(2, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class AnswerWizard(DispatchBaseClass):
@@ -1293,7 +1295,7 @@ class AnswerWizardFiles(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1304,7 +1306,7 @@ class AnswerWizardFiles(DispatchBaseClass):
 	def __len__(self):
 		return self._ApplyTypes_(*(1610809346, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class Assistant(DispatchBaseClass):
@@ -1391,7 +1393,7 @@ class Assistant(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1465,7 +1467,7 @@ class BalloonCheckbox(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1506,7 +1508,7 @@ class BalloonCheckboxes(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1522,14 +1524,14 @@ class BalloonCheckboxes(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),None)
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1610809347, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class BalloonLabel(DispatchBaseClass):
@@ -1553,7 +1555,7 @@ class BalloonLabel(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1594,7 +1596,7 @@ class BalloonLabels(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1610,14 +1612,14 @@ class BalloonLabels(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),None)
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1610809347, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class COMAddIn(DispatchBaseClass):
@@ -1645,7 +1647,7 @@ class COMAddIn(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1691,7 +1693,7 @@ class COMAddIns(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -1707,14 +1709,14 @@ class COMAddIns(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C033A-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class CalloutFormat(DispatchBaseClass):
@@ -1782,7 +1784,7 @@ class ColorFormat(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -2207,7 +2209,7 @@ class CommandBarControls(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -2223,14 +2225,14 @@ class CommandBarControls(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C0308-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1610809345, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class CommandBarPopup(DispatchBaseClass):
@@ -2503,14 +2505,14 @@ class DocumentProperties(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),None)
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(4, 2, (3, 0), ((16387, 10),), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class DocumentProperty(DispatchBaseClass):
@@ -2659,7 +2661,7 @@ class FoundFiles(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -2675,14 +2677,14 @@ class FoundFiles(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),None)
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(4, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class FreeformBuilder(DispatchBaseClass):
@@ -2741,7 +2743,7 @@ class GroupShapes(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -2757,14 +2759,14 @@ class GroupShapes(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C031C-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(2, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class HTMLProject(DispatchBaseClass):
@@ -2799,7 +2801,7 @@ class HTMLProject(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -2840,7 +2842,7 @@ class HTMLProjectItem(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -2879,7 +2881,7 @@ class HTMLProjectItems(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -2895,14 +2897,14 @@ class HTMLProjectItems(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C0358-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class IAccessible(DispatchBaseClass):
@@ -3133,7 +3135,7 @@ class IFind(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -3165,7 +3167,7 @@ class IFoundFiles(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -3181,14 +3183,14 @@ class IFoundFiles(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),None)
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1610743809, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class IMsoDispCagNotifySink(DispatchBaseClass):
@@ -3342,7 +3344,7 @@ class PropertyTest(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -3390,7 +3392,7 @@ class PropertyTests(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -3406,14 +3408,14 @@ class PropertyTests(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C0333-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(4, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class Script(DispatchBaseClass):
@@ -3446,7 +3448,7 @@ class Script(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -3495,7 +3497,7 @@ class Scripts(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -3511,14 +3513,14 @@ class Scripts(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C0341-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1610809345, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class ShadowFormat(DispatchBaseClass):
@@ -3752,7 +3754,7 @@ class ShapeNodes(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -3768,14 +3770,14 @@ class ShapeNodes(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C0318-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(2, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class ShapeRange(DispatchBaseClass):
@@ -3947,7 +3949,7 @@ class ShapeRange(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -3963,14 +3965,14 @@ class ShapeRange(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C031C-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(2, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class Shapes(DispatchBaseClass):
@@ -4116,7 +4118,7 @@ class Shapes(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -4132,14 +4134,14 @@ class Shapes(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C031C-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(2, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class TextEffectFormat(DispatchBaseClass):
@@ -4306,7 +4308,7 @@ class WebPageFonts(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -4322,14 +4324,14 @@ class WebPageFonts(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C0913-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
 class _CommandBarActiveX(DispatchBaseClass):
@@ -4787,7 +4789,7 @@ class _CommandBarButton(DispatchBaseClass):
 		"accValue": ((-5004, LCID, 4, 0),()),
 	}
 
-class _CommandBarButtonEvents:
+class _CommandBarButtonEvents(object):
 	CLSID = CLSID_Sink = IID('{000C0351-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{55F88891-7708-11D1-ACEB-006008961DA5}')
 	_public_methods_ = [] # For COM Server support
@@ -5081,7 +5083,7 @@ class _CommandBarComboBox(DispatchBaseClass):
 		"accValue": ((-5004, LCID, 4, 0),()),
 	}
 
-class _CommandBarComboBoxEvents:
+class _CommandBarComboBoxEvents(object):
 	CLSID = CLSID_Sink = IID('{000C0354-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{55F88897-7708-11D1-ACEB-006008961DA5}')
 	_public_methods_ = [] # For COM Server support
@@ -5227,7 +5229,7 @@ class _CommandBars(DispatchBaseClass):
 	# str(ob) and int(ob) will use __call__
 	def __unicode__(self, *args):
 		try:
-			return unicode(self.__call__(*args))
+			return str(self.__call__(*args))
 		except pythoncom.com_error:
 			return repr(self)
 	def __str__(self, *args):
@@ -5243,17 +5245,17 @@ class _CommandBars(DispatchBaseClass):
 		return win32com.client.util.WrapEnum(self._oleobj_.InvokeTypes(-4,LCID,2,(13, 10),()),'{000C0304-0000-0000-C000-000000000046}')
 	def __getitem__(self, index):
 		"Allow this class to be accessed as a collection"
-		if not self.__dict__.has_key('_enum_'):
+		if '_enum_' not in self.__dict__:
 			self.__dict__['_enum_'] = self._NewEnum()
 		return self._enum_.__getitem__(index)
 	#This class has Count() property - allow len(ob) to provide this
 	def __len__(self):
 		return self._ApplyTypes_(*(1610809347, 2, (3, 0), (), "Count", None))
 	#This class has a __len__ - this is needed so 'if object:' always returns TRUE.
-	def __nonzero__(self):
+	def __bool__(self):
 		return True
 
-class _CommandBarsEvents:
+class _CommandBarsEvents(object):
 	CLSID = CLSID_Sink = IID('{000C0352-0000-0000-C000-000000000046}')
 	coclass_clsid = IID('{55F88893-7708-11D1-ACEB-006008961DA5}')
 	_public_methods_ = [] # For COM Server support
