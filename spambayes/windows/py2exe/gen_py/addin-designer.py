@@ -150,9 +150,9 @@ IAddinInstance_vtables_ = [
 
 _IDTExtensibility2_vtables_dispatch_ = 1
 _IDTExtensibility2_vtables_ = [
-	(( 'OnConnection' , 'Application' , 'ConnectMode' , 'AddInInst' , 'custom' , 
+	(( 'OnConnection' , 'Application' , 'ConnectMode' , 'AddInInst' , 'custom' ,
 			), 1, (1, (), [ (9, 1, None, None) , (3, 1, None, None) , (9, 1, None, None) , (24588, 1, None, None) , ], 1 , 1 , 4 , 0 , 28 , (3, 0, None, None) , 0 , )),
-	(( 'OnDisconnection' , 'RemoveMode' , 'custom' , ), 2, (2, (), [ (3, 1, None, None) , 
+	(( 'OnDisconnection' , 'RemoveMode' , 'custom' , ), 2, (2, (), [ (3, 1, None, None) ,
 			(24588, 1, None, None) , ], 1 , 1 , 4 , 0 , 32 , (3, 0, None, None) , 0 , )),
 	(( 'OnAddInsUpdate' , 'custom' , ), 3, (3, (), [ (24588, 1, None, None) , ], 1 , 1 , 4 , 0 , 36 , (3, 0, None, None) , 0 , )),
 	(( 'OnStartupComplete' , 'custom' , ), 4, (4, (), [ (24588, 1, None, None) , ], 1 , 1 , 4 , 0 , 40 , (3, 0, None, None) , 0 , )),

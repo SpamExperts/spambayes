@@ -305,7 +305,7 @@ class StatsTest(unittest.TestCase):
         self.assertEqual(data["perc_unsure_not_trained_s"],
                          "%%(perc_unsure_not_trained).%df%%(perc)s" % (dp,))
         self.assertEqual(data["perc"], "%")
-        
+
     def _test_no_recovery(self, score, one, two, three, five):
         self.s.RecordClassification(score)
         s = self.s.GetStats()
@@ -524,7 +524,7 @@ class StatsTest(unittest.TestCase):
         # Check that there are the right number of messages (assume that
         # the rest is right - if not it should be caught by other tests).
         self.assertEqual(self.s.GetStats()[0], "Messages classified: 3")
-        
+
 
 def suite():
     suite = unittest.TestSuite()

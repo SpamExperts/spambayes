@@ -49,7 +49,7 @@ class dbexpimpTest(unittest.TestCase):
             os.remove(TEMP_DBM_NAME)
         except OSError:
             pass
-        
+
     def test_csv_module_import(self):
         """Check that we don't import the old object craft csv module."""
         self.assert_(hasattr(sb_dbexpimp.csv, "reader"))
@@ -77,7 +77,7 @@ class dbexpimpTest(unittest.TestCase):
             wi = bayes._wordinfoget(word)
             self.assertEqual(int(hamcount), wi.hamcount)
             self.assertEqual(int(spamcount), wi.spamcount)
-        
+
     def test_dbm_export(self):
         # Create a dbm classifier to export.
         bayes = DBDictClassifier(TEMP_DBM_NAME)

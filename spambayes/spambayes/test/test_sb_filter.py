@@ -98,9 +98,9 @@ class HammieFilterTest(unittest.TestCase):
         b.store()
         b.close()
 
-        # Create the fresh classifier.        
+        # Create the fresh classifier.
         self.h.newdb()
-        
+
         # Verify that the classifier isn't open.
         self.assertEqual(self.h.h, None)
 

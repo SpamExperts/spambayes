@@ -99,7 +99,7 @@ class gt_str(str):
             # here
             return "_(" + super(gt_str, self).__repr__() + ")"
         else:
-            return super(gt_str, self).__repr__() 
+            return super(gt_str, self).__repr__()
 
 
 class RCParser:
@@ -314,7 +314,7 @@ class RCParser:
         self.token = self.token[1:-1]
         self.debug("Caption is:",self.token)
         if self.gettexted:
-            # gettext captions 
+            # gettext captions
             dlg.caption = gt_str(self.token)
         else:
             dlg.caption = self.token
@@ -338,7 +338,7 @@ class RCParser:
             self.getToken()
             if self.token[0:1]=='"':
                 if self.gettexted:
-                    # gettext labels 
+                    # gettext labels
                     control.label = gt_str(self.token[1:-1])
                 else:
                     control.label = self.token[1:-1]

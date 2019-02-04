@@ -929,14 +929,14 @@ class BayesManager:
             else:
                 self.received_unsure += 1
             self._StartNotifyTimer()
-        
+
     def _StartNotifyTimer(self):
         # First kill any existing timer
         self._KillNotifyTimer()
         # And start a new timer.
         delay = self.config.notification.notify_accumulate_delay
         self._DoStartNotifyTimer(delay)
-        
+
     def _DoStartNotifyTimer(self, delay):
         assert thread.get_ident() == self.owner_thread_ident
         assert self.notify_timer_id is None, "Shouldn't start a timer when already have one"
@@ -946,20 +946,20 @@ class BayesManager:
         delay = int(delay*1000) # convert to ms.
         self.notify_timer_id = timer.set_timer(delay, self._NotifyTimerFunc)
         self.LogDebug(1, "Notify timer started - id=%d, delay=%d" % (self.notify_timer_id, delay))
-        
+
     def _KillNotifyTimer(self):
         assert thread.get_ident() == self.owner_thread_ident
         if self.notify_timer_id is not None:
             timer.kill_timer(self.notify_timer_id)
             self.LogDebug(2, "The notify timer with id=%d was stopped" % self.notify_timer_id)
             self.notify_timer_id = None
-        
+
     def _NotifyTimerFunc(self, event, time):
         # Kill the timer first
         assert thread.get_ident() == self.owner_thread_ident
         self.LogDebug(1, "The notify timer with id=%s fired" % self.notify_timer_id)
         self._KillNotifyTimer()
-        
+
         import winsound
         config = self.config.notification
         sound_opts = winsound.SND_FILENAME | winsound.SND_ASYNC | winsound.SND_NOSTOP | winsound.SND_NODEFAULT

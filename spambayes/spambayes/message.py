@@ -130,7 +130,7 @@ class MessageInfoBase(object):
             return self.db[STATS_STORAGE_KEY]
         else:
             return None
-            
+
     def set_persistent_statistics(self, stats):
         self.db[STATS_STORAGE_KEY] = stats
         self.store()
@@ -566,7 +566,7 @@ class SBHeaderMessage(Message):
         if options['Headers', 'add_unique_id']:
             self[options['Headers', 'mailid_header_name']] = self.id
 
-        self.addNotations()            
+        self.addNotations()
 
     def addNotations(self):
         """Add the appropriate string to the subject: and/or to: header.

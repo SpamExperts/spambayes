@@ -283,7 +283,7 @@ def helper():
     testServerThread.setDaemon(True)
     testServerThread.start()
     testServerReady.wait()
-    
+
     proxyThread = threading.Thread(target=runUIAndProxy)
     proxyThread.setDaemon(True)
     proxyThread.start()

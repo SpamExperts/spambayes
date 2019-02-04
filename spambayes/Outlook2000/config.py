@@ -278,7 +278,7 @@ defaults = {
         but otherwise untouched."""),
         BOOLEAN, RESTORE),
     ),
-    
+
     # These options control how the user is notified of new messages.
     "Notification": (
         ("notify_sound_enabled", _("Play a notification sound when new messages arrive?"), False,

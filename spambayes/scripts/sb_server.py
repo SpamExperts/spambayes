@@ -182,7 +182,7 @@ class ServerLineReader(Dibbler.BrighterAsyncChat):
                     self.send = self.send_ssl
                     self.recv = self.recv_ssl
             self.socket.setblocking(0)
-            
+
     def send_ssl(self, data):
         return self.ssl_socket.write(data)
 
@@ -929,7 +929,7 @@ class State:
         cls should match one of the options["Headers", "header_*_string"]
         values.
 
-        score is the score the message received.        
+        score is the score the message received.
         """
         if cls == options["Headers", "header_ham_string"]:
             self.numHams += 1
@@ -979,7 +979,7 @@ def _recreateState():
         proxy.close()
     del proxyListeners[:]
 
-    if state.prepared:    
+    if state.prepared:
         # Close the state (which saves if necessary)
         state.close()
     # And get a new one going.

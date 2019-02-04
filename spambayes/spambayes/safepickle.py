@@ -27,15 +27,15 @@ def pickle_write(filename, value, protocol=0):
         # Be as defensive as possible.  Always keep a safe copy.
         tmp = filename + '.tmp'
         fp = None
-        try: 
-            fp = open(tmp, 'wb') 
-            pickle.dump(value, fp, protocol) 
-            fp.close() 
-        except IOError, e: 
-            if options["globals", "verbose"]: 
+        try:
+            fp = open(tmp, 'wb')
+            pickle.dump(value, fp, protocol)
+            fp.close()
+        except IOError, e:
+            if options["globals", "verbose"]:
                 print >> sys.stderr, 'Failed update: ' + str(e)
-            if fp is not None: 
-                os.remove(tmp) 
+            if fp is not None:
+                os.remove(tmp)
             raise
         try:
             # With *nix we can just rename, and (as long as permissions

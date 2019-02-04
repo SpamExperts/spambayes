@@ -127,7 +127,7 @@ def usage(code, msg=''):
     v = get_current_version()
     print >> sys.stderr, v.get_long_version("SpamBayes Command Line Filter")
     print >> sys.stderr
-    
+
     if msg:
         print >> sys.stderr, msg
         print >> sys.stderr

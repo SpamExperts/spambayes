@@ -181,7 +181,7 @@ class SBVersion:
 
         if not patch:
             patch = "0"
-            
+
         if not prerelease:
             releaselevel = "final"
             serial = 0
@@ -353,7 +353,7 @@ def main(args):
     if '-g' in args:
         make_cfg(sys.stdout)
         sys.exit(0)
-        
+
     v_this = get_current_version()
     print "Current version:", v_this.get_long_version()
 

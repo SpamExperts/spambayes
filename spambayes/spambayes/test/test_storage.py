@@ -208,7 +208,7 @@ def suite():
              )
     from spambayes.port import bsddb
     from spambayes.port import gdbm
-    
+
     if gdbm or bsddb:
         clses += (DBStorageTestCase,)
     else:
@@ -220,7 +220,7 @@ def suite():
         print "Skipping ZODB tests, ZODB not available"
     else:
          clses += (ZODBStorageTestCase,)
-        
+
     for cls in clses:
         suite.addTest(unittest.makeSuite(cls))
     return suite

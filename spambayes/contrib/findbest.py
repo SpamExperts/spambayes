@@ -231,7 +231,7 @@ def main(args):
             msgids.update(set(v))
     else:
         msgids = None
-        
+
     scores = {}
     try:
         score(unsure, h, cls, scores, msgids, skipspam)

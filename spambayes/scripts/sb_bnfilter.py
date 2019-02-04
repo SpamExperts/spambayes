@@ -40,7 +40,7 @@
 Where:
     -h
         show usage and exit
-   
+
 *   -f
         filter (default if no processing options are given)
 *   -g
@@ -56,7 +56,7 @@ Where:
 *   -S
         [EXPERIMENTAL] untrain spam (only use if you've already trained
         this message)
-        
+
     -k FILE
         Unix domain socket used to communicate with a short-lived server
         process. Default is ~/.sbbnsock-<hostname>
@@ -86,7 +86,7 @@ def usage(code, msg=''):
         print >> sys.stderr
     print >> sys.stderr, __doc__
     sys.exit(code)
-        
+
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hfgstGSd:p:o:a:A:k:')
@@ -95,7 +95,7 @@ def main():
 
     # build the default socket filename from environment variables
     filename = os.path.expanduser('~/.sbbnsock-'+socket.gethostname())
-    
+
     action_options = []
     server_options = []
     for opt, arg in opts:
@@ -111,10 +111,10 @@ def main():
 
     if args:
         usage(2)
-        
+
     server_options.append(filename)
     s = make_socket(server_options, filename)
-        
+
     # We have a connection to the existing shared server
     w_file = s.makefile('w')
     r_file = s.makefile('r')
@@ -201,7 +201,7 @@ def make_socket(server_options, filename):
             time.sleep(0.2 * 2.0**no_server_count * 2.0**refused_count)
         else:
             return s
-                    
+
 def fork_server(options):
     if os.fork():
         # parent
@@ -221,8 +221,8 @@ def fork_server(options):
                                            'sb_bnserver.py') ]+options)
     # should never get here
     sys._exit(1)
-    
+
 
 if __name__ == "__main__":
     main()
-        
+

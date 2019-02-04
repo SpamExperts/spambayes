@@ -44,7 +44,7 @@ def main(args):
         if opt in ("-h", "--help"):
             usage()
             return 0
-            
+
     dbname, usedb = storage.database_type(opts)
     store = storage.open_storage(dbname, usedb)
 

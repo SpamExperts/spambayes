@@ -657,7 +657,7 @@ class MAPIMsgStoreFolder:
             return folder.GetContentsTable(0).GetRowCount(0)
         except pythoncom.com_error, details:
             raise MsgStoreExceptionFromCOMException(details)
-        
+
     # EmptyFolder() *permanently* deletes ALL messages and subfolders from
     # this folder without deleting the folder itself.
     #
@@ -1213,7 +1213,7 @@ class MAPIMsgStoreMsg:
                 #    butchered = text[:butcher_pos] + "\nSpamBayes-" + \
                 #                text[butcher_pos+1:] + "\n\n"
                 #    msg = email.message_from_string(butchered)
-    
+
             # patch up mime stuff - these headers will confuse the email
             # package as it walks the attachments.
             if strip_mime_headers:
@@ -1324,7 +1324,7 @@ class MAPIMsgStoreMsg:
 
         return msg
     # end of OLD GetEmailPackageObject
-    
+
     def SetField(self, prop, val):
         # Future optimization note - from GetIDsFromNames doco
         # Name-to-identifier mapping is represented by an object's

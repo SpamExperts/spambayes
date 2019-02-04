@@ -128,7 +128,7 @@ class Stats(object):
 
     def LoadPersistentStats(self):
         """Load the persistent statistics from the messageinfo db.
-        
+
         If the persistent statistics have not yet been stored in the db
         then we need to recalculate them by iterating through all the
         messages.  This will result in a one-time performance hit, but
@@ -168,7 +168,7 @@ class Stats(object):
 
             classification = m.GetClassification()
             trained = m.GetTrained()
-            
+
             if classification == self.options["Headers",
                                               "header_spam_string"]:
                 # Classified as spam.
@@ -343,7 +343,7 @@ class Stats(object):
 
         data = self._CalculateAdditional(data)
         format_dict = self._AddPercentStrings(data, decimal_points)
-        
+
         # Possibly use HTML for tabs.
         if use_html:
             format_dict["tab"] = "&nbsp;&nbsp;&nbsp;&nbsp;"
@@ -368,7 +368,7 @@ class Stats(object):
             push((_("%(tab)sFalse negatives:%(tab)s%(num_trained_spam_fn)d (%(perc_fn_s)s of total)") \
                  % format_dict) % format_dict)
         push("")
-        
+
         push(_("Manually classified as good:%(tab)s%(num_trained_ham)d") % format_dict)
         push(_("Manually classified as spam:%(tab)s%(num_trained_spam)d") % format_dict)
         push("")

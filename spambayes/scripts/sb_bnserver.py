@@ -24,14 +24,14 @@ Where:
     -A number
         terminate this server after this many requests
     FILE
-        unix domain socket used on which we listen    
+        unix domain socket used on which we listen
 """
 
 import os, getopt, sys, SocketServer, traceback, select, socket, errno
 
 # See Options.py for explanations of these properties
 program = sys.argv[0]
-  
+
 
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
@@ -65,7 +65,7 @@ def main():
         try:
             from spambayes import Options, storage
             options = Options.options
-        
+
             for opt, arg in opts:
                 if opt == '-h':
                     usage(0)
@@ -88,7 +88,7 @@ def main():
 
 class NowIdle(Exception):
     pass
-        
+
 class BNServer(SocketServer.UnixStreamServer):
     allow_reuse_address = True
     timeout = 10.0
@@ -100,14 +100,14 @@ class BNServer(SocketServer.UnixStreamServer):
                 self.handle_request()
         except NowIdle:
             pass
-    
+
     def get_request(self):
         r, w, e = select.select([self.socket], [], [], self.timeout)
         if r:
             return self.socket.accept()
         else:
             raise NowIdle()
-        
+
 class BNRequest(SocketServer.StreamRequestHandler):
     def handle(self):
         switches = self.rfile.readline()
@@ -121,7 +121,7 @@ class BNRequest(SocketServer.StreamRequestHandler):
                                                        sys.exc_info()[1])[0]
             self.wfile.write('1\n%d\n'%(len(response),))
             self.wfile.write(response)
-       
+
     def _calc_response(self, switches, body):
         switches = switches.split()
         actions = []
@@ -160,7 +160,7 @@ def make_HammieFilter():
         sys.path.append(path)
     from sb_filter import HammieFilter
     return HammieFilter()
-                
-                
+
+
 if __name__ == "__main__":
     main()

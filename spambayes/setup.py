@@ -70,7 +70,7 @@ class sdist(sdist_parent):
             print '\n', archive, "\n\tMD5:", md5.md5(data).hexdigest()
             print "\tLength:", len(data)
         return retval
-        
+
 scripts=['scripts/sb_client.py',
          'scripts/sb_dbexpimp.py',
          'scripts/sb_evoscore.py',

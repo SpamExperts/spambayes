@@ -31,7 +31,7 @@ except:
 class ServiceEventLogHandler(logging.Handler):
     """Dispatches logging events to the win32 services event log.
 
-    Requires pywin32.    
+    Requires pywin32.
     """
     import servicemanager
     def emit(self, record):

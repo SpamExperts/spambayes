@@ -879,7 +879,7 @@ class UserInterface(BaseUserInterface):
                 os.rename(options["Storage", "messageinfo_storage_file"],
                           options["Storage",
                                   "messageinfo_storage_file"] + ".old")
-            
+
         self.reReadOptions()
 
         html.mainContent.heading = _("Options Changed")

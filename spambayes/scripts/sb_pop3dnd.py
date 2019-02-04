@@ -976,7 +976,7 @@ def stop():
     state.bayes.store()
     # Explicitly closing the db is a good idea, though.
     state.bayes.close()
-    
+
     # Stop the POP3 proxy.
     if state.proxyPorts:
         killer = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

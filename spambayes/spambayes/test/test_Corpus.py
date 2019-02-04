@@ -197,7 +197,7 @@ class ExpiryCorpusTest(unittest.TestCase):
         # Check that not expired messages are still there.
         for msg in not_expire:
             self.assertEqual(msg in self.corpus, True)
-        
+
 
 def suite():
     suite = unittest.TestSuite()

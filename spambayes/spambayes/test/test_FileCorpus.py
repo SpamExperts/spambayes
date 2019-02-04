@@ -253,7 +253,7 @@ class FileCorpusTest(_FileCorpusBaseTest):
         # Put in a message that won't match the filter.
         msg = self.factory.create("10", self.directory, good1)
         msg.store()
-        
+
     def test___init__(self):
         self.assertEqual(self.corpus.directory, self.directory)
         self.assertEqual(self.corpus.filter, '?')

@@ -16,7 +16,7 @@ class cStruct(object):
     # "fs" is format string for that value (see struct module doc)
     #           For lpstr, lpcstr, lpxxx, use 'P'.
     # "initial_value" default value
-    
+
     def __init__(self, sd):
         self.sd = list(sd)
         self.nlst = [i[0] for i in sd]
@@ -62,7 +62,7 @@ class OPENFILENAME(cStruct):
         ('hwndOwner', 'P', 0),
         ('hInstance', 'P', 0),
         ('lpstrFilter', 'P', 0),    # File type filter
-        ('lpstrCustomFilter', 'P', 0), 
+        ('lpstrCustomFilter', 'P', 0),
         ('nMaxCustFilter', 'L', 0),
         ('nFilterIndex', 'L', 0),
         ('lpstrFile', 'P', 0),      # Initial filename and filename buffer

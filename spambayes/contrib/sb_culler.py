@@ -84,14 +84,14 @@ class Filter:
     def __init__(self, test, action):
         self.test = test
         self.action = action
-        
+
     def process(self, mi, log):
         result = self.test(mi, log)
         if result:
             self.action(mi, log)
             return self.action.descr + " because " + result
         return False
-            
+
 
 class AppendFile:
     """Action: append message text to the given filename"""
@@ -121,7 +121,7 @@ def KEEP(mi, log):
     """Action: keep message in mailbox"""
     log.do_action(KEEP_IN_MAILBOX)
 KEEP.descr = "keep in mailbox"
-        
+
 
 class Duplicate:
     def __init__(self):
@@ -141,7 +141,7 @@ class IllegalDeliveredTo:
         fields = mi.msg.get_all("Delivered-To")
         if fields is None:
             return False
-        
+
         for field in fields:
             field = field.lower()
             for name in self.names:
@@ -177,7 +177,7 @@ class WhiteListFrom:
             print "Reloading", self.filename
             self._mtime = mtime
             self._load()
-        
+
     def __call__(self, mi, log):
         self._load_if_needed()
         frm = mi.msg["from"]
@@ -187,7 +187,7 @@ class WhiteListFrom:
             log.pass_test(SPAM)
             return "it is in 'from' white list"
         return False
-        
+
 class WhiteListSubstrings:
     """Test: Whitelist message if named field contains one of the substrings"""
     def __init__(self, field, substrings):
@@ -211,7 +211,7 @@ class IsSpam:
         if spam_cutoff is None:
             spam_cutoff = options["Categorization", "spam_cutoff"]
         self.spam_cutoff = spam_cutoff
-        
+
     def __call__(self, mi, log):
         prob = self.sb_hammie.score(mi.msg)
         if prob > self.spam_cutoff:
@@ -263,7 +263,7 @@ def open_mailbox(server, username, password, debuglevel = 0):
             count, size = mailbox.stat()
             print "Message count:   ", count
             print "Total bytes  :   ", size
-        
+
     except:
         mailbox.quit()
         raise
@@ -305,7 +305,7 @@ class Filters(list):
             msg = mboxutils.get_message(text)
 
             mi = MessageInfo(mailbox, i, msg, text)
-            
+
             _log_subject(mi, log)
 
             for filter in self:
@@ -319,7 +319,7 @@ class Filters(list):
                 log.pass_test("unknown")
                 log.do_action(KEEP_IN_MAILBOX)
                 log.accept("unknown")
-            
+
         return log
 
 def filter_server( (server, user, pwd), filters):
@@ -355,12 +355,12 @@ try:
     _check_for_stop = _ms_stop
 except ImportError:
     _check_for_stop = _unix_stop
-        
+
 def restart_network():
     # This is called after too many connection failures.
     # That usually means my ISP dropped my DHCP and I need to
     # bounce my Linksys firewall/DHCP/hub.
-    
+
     print "Network appears to be down.  Bringing Linksys down then up..."
     try:
         # Note this this example uses the default password.  YMMV.
@@ -384,7 +384,7 @@ def wait(t, delta = 10):
             sys.stdout.flush()
 
         time.sleep(min(i, delta))
-        
+
         _check_for_stop()
 
         first = False
@@ -425,7 +425,7 @@ def main():
 
     filters.add(IllegalDeliveredTo(valid_emails), DELETE)
     filters.add(SpamAssassin(), AppendFile("spam2.mbox"))
-    
+
 
     # Get rid of anything which smells like an exectuable.
     filters.add(IsVirus, DELETE)
@@ -492,7 +492,7 @@ def main():
                     cumulative_log[VIRUS],
                     (cumulative_log[VIRUS] - initial_log[VIRUS]) /
                              delta_t * 3600)
-        
+
         if error_flag:
             error_count += 1
 
