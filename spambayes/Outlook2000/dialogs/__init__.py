@@ -84,7 +84,7 @@ def MakePropertyPage(parent, manager, config, idd, yoffset=24):
     import dialog_map
     commands = dialog_map.dialog_map[idd]
     if not parent:
-        raise "Parent must be the tab control"
+        raise ValueError("Parent must be the tab control")
 
     import dlgcore
     dlg = dlgcore.ProcessorPage(parent, manager, config, idd, commands, yoffset)
