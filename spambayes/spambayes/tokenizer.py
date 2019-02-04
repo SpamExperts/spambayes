@@ -13,10 +13,10 @@ from past.utils import old_div
 from builtins import object
 
 import email
-import email.message
-import email.header
-import email.utils
-import email.errors
+import email.Message
+import email.Header
+import email.Utils
+import email.Errors
 import re
 import math
 import os
@@ -1355,8 +1355,8 @@ class Tokenizer(object):
         # but real benefit to keeping case intact in this specific context.
         x = msg.get('subject', '')
         try:
-            subjcharsetlist = email.header.decode_header(x)
-        except (binascii.Error, email.errors.HeaderParseError, ValueError):
+            subjcharsetlist = email.Header.decode_header(x)
+        except (binascii.Error, email.Errors.HeaderParseError, ValueError):
             subjcharsetlist = [(x, 'invalid')]
         for x, subjcharset in subjcharsetlist:
             if subjcharset is not None:
@@ -1387,11 +1387,11 @@ class Tokenizer(object):
                 continue
 
             noname_count = 0
-            for name, addr in email.utils.getaddresses(addrlist):
+            for name, addr in email.Utils.getaddresses(addrlist):
                 if name:
                     try:
-                        subjcharsetlist = email.header.decode_header(name)
-                    except (binascii.Error, email.errors.HeaderParseError,
+                        subjcharsetlist = email.Header.decode_header(name)
+                    except (binascii.Error, email.Errors.HeaderParseError,
                             ValueError):
                         subjcharsetlist = [(name, 'invalid')]
                     for name, charset in subjcharsetlist:
@@ -1426,7 +1426,7 @@ class Tokenizer(object):
         if options["Tokenizer", "summarize_email_prefixes"]:
             all_addrs = []
             addresses = msg.get_all('to', []) + msg.get_all('cc', [])
-            for name, addr in email.utils.getaddresses(addresses):
+            for name, addr in email.Utils.getaddresses(addresses):
                 all_addrs.append(addr.lower())
 
             if len(all_addrs) > 1:
@@ -1453,7 +1453,7 @@ class Tokenizer(object):
         if options["Tokenizer", "summarize_email_suffixes"]:
             all_addrs = []
             addresses = msg.get_all('to', []) + msg.get_all('cc', [])
-            for name, addr in email.utils.getaddresses(addresses):
+            for name, addr in email.Utils.getaddresses(addresses):
                 # flip address code so following logic is the same as
                 # that for prefixes
                 addr = list(addr)

@@ -16,9 +16,9 @@ import sys
 import os
 import glob
 import mailbox
-import email.parser
-import email.message
-import email.generator
+import email.Parser
+import email.Message
+import email.Generator
 import getopt
 
 def unheader(msg, pat):
@@ -28,7 +28,7 @@ def unheader(msg, pat):
             del msg[hdr]
 
 # remain compatible with 2.2.1 - steal replace_header from 2.3 source
-class Message(email.message.Message):
+class Message(email.Message.Message):
     def replace_header(self, _name, _value):
         """Replace a header.
 

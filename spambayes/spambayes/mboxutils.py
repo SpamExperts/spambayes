@@ -28,7 +28,7 @@ import sys
 import glob
 import email
 import mailbox
-import email.message
+import email.Message
 import re
 import traceback
 
@@ -165,7 +165,7 @@ def get_message(obj):
     the email package is used to create a Message object from it.  This
     can fail if the message is malformed.  In that case, the headers
     (everything through the first blank line) are thrown out, and the
-    rest of the text is wrapped in a bare email.Message.Message. #
+    rest of the text is wrapped in a bare email.Message.Message.
 
     Note that we can't use our own message class here, because this
     function is imported by tokenizer, and our message class imports
@@ -174,7 +174,7 @@ def get_message(obj):
     shouldn't matter.
     """
 
-    if isinstance(obj, email.message.Message):
+    if isinstance(obj, email.Message.Message):
         return obj
     # Create an email Message object.
     if hasattr(obj, "read"):
@@ -187,7 +187,7 @@ def get_message(obj):
         # package to parse them, so just get rid of them first.
         headers = extract_headers(obj)
         obj = obj[len(headers):]
-        msg = email.message.Message()
+        msg = email.Message.Message()
         msg.set_payload(obj)
     return msg
 
@@ -198,7 +198,7 @@ def as_string(msg, unixfrom=False):
     TypeError for some malformed messages.  This catches that and attempts
     to return something approximating the original message.
 
-    To Do: This really should be done by subclassing email.message.Message
+    To Do: This really should be done by subclassing email.Message.Message
     and making this function the as_string() method.  After 1.0.
 
     [Tony] Better: sb_filter & sb_mboxtrain should stop using this and

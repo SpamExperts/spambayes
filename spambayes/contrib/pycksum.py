@@ -42,7 +42,7 @@ from builtins import str
 from builtins import range
 import getopt
 import sys
-import email.parser
+import email.Parser
 import email.generator
 
 import anydbm

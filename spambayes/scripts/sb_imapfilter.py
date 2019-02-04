@@ -136,9 +136,9 @@ import getopt
 import types
 import _thread
 import email
-import email.parser
+import email.Parser
 from getpass import getpass
-from email.utils import parsedate
+from email.Utils import parsedate
 
 from spambayes import Stats
 from spambayes import message
