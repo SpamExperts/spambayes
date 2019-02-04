@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import generators
 # unit tester for the Outlook addin.
 #
 # Note we are only attempting to test Outlook specific
@@ -10,17 +8,14 @@ from __future__ import generators
 # move this test message back around, and watch the incremental retrain
 # in action.  Also checks that the message correctly remains classified
 # after a message move.
-from future import standard_library
-standard_library.install_aliases()
-from builtins import range
-from builtins import object
+from __future__ import generators
 
 from win32com.client import constants
 import sys
 from time import sleep
 import copy
 import rfc822
-import io
+import cStringIO
 import threading
 
 from spambayes.storage import STATE_KEY
@@ -65,7 +60,7 @@ def WaitForFilters():
         sleep(0.01)
 
 def DictExtractor(bayes):
-    for k, v in list(bayes.wordinfo.items()):
+    for k, v in bayes.wordinfo.items():
         yield k, v
 
 def DBExtractor(bayes):
@@ -133,7 +128,7 @@ def FindTopWords(bayes, num, get_spam):
     return ret
 
 # A little driver/manager for our tests
-class Driver(object):
+class Driver:
     def __init__(self, mgr):
         if mgr is None:
             import manager
@@ -188,7 +183,7 @@ class Driver(object):
             raise TestFailed("Old test messages appear to still exist.  These may" \
                              "be 'soft-deleted' - you will need to purge them manually")
         if num:
-            print("Cleaned %d test messages from folder '%s'" % (num, folder.Name))
+            print "Cleaned %d test messages from folder '%s'" % (num, folder.Name)
 
     def CleanAllTestMessages(self):
         self._CleanTestMessageFromFolder(self.folder_spam)
@@ -215,12 +210,12 @@ class Driver(object):
             words.update(FindTopWords(bayes, 50, True))
         # Create a new blank message with our words
         msg = self.manager.outlook.CreateItem(0)
-        msg.Body = "\n".join(list(words.keys()))
+        msg.Body = "\n".join(words.keys())
         msg.Subject = TEST_SUBJECT
         return msg, words
 
 def check_words(words, bayes, spam_offset, ham_offset):
-    for word, existing_info in list(words.items()):
+    for word, existing_info in words.items():
         new_info = bayes._wordinfoget(word)
         if existing_info.spamcount+spam_offset != new_info.spamcount or \
            existing_info.hamcount+ham_offset != new_info.hamcount:
@@ -242,7 +237,7 @@ def TestSpamFilter(driver):
     original_bayes = copy.copy(driver.manager.classifier_data.bayes)
     # for each watch folder, create a spam message, and do the training thang
     for msf_watch, folder_watch in driver.GetWatchFolderGenerator():
-        print("Performing Spam test on watch folder '%s'..." % msf_watch.GetFQName())
+        print "Performing Spam test on watch folder '%s'..." % msf_watch.GetFQName()
         # Create a spam message in the Inbox - it should get immediately filtered
         msg, words = driver.CreateTestMessageInFolder(SPAM, folder_watch)
         # sleep to ensure filtering.
@@ -348,7 +343,7 @@ def TestSpamFilter(driver):
             TestFailed("The bayes object's 'probcache' did not compare the same at the end of all this!")
 
         spam_msg.Delete()
-    print("Created a Spam message, and saw it get filtered and trained.")
+    print "Created a Spam message, and saw it get filtered and trained."
 
 def _DoTestHamTrain(driver, folder1, folder2):
     # [ 780612 ] Outlook incorrectly trains on moved messages
@@ -399,14 +394,14 @@ def TestHamFilter(driver):
     num = 0
     folders = []
     for f in gen:
-        print("Running ham filter tests on folder '%s'" % f.GetFQName())
+        print "Running ham filter tests on folder '%s'" % f.GetFQName()
         f = f.GetOutlookItem()
         _DoTestHamFilter(driver, f)
         num += 1
         folders.append(f)
     # Now test incremental train logic, between all these folders.
     if len(folders)<2:
-        print("NOTE: Can't do incremental training tests as only 1 watch folder is in place")
+        print "NOTE: Can't do incremental training tests as only 1 watch folder is in place"
     else:
         for f in folders:
             # 'targets' is a list of all folders except this
@@ -414,12 +409,12 @@ def TestHamFilter(driver):
             targets.remove(f)
             for t in targets:
                 _DoTestHamTrain(driver, f, t)
-    print("Created a Ham message, and saw it remain in place (in %d watch folders.)" % num)
+    print "Created a Ham message, and saw it remain in place (in %d watch folders.)" % num
 
 def TestUnsureFilter(driver):
     # Create a spam message in the Inbox - it should get immediately filtered
     for msf_watch, folder_watch in driver.GetWatchFolderGenerator():
-        print("Performing Spam test on watch folder '%s'..." % msf_watch.GetFQName())
+        print "Performing Spam test on watch folder '%s'..." % msf_watch.GetFQName()
         msg, words = driver.CreateTestMessageInFolder(UNSURE, folder_watch)
         # sleep to ensure filtering.
         WaitForFilters()
@@ -430,7 +425,7 @@ def TestUnsureFilter(driver):
         if spam_msg is None:
             TestFailed("The test message vanished from the Inbox, but didn't appear in Unsure")
         spam_msg.Delete()
-    print("Created an unsure message, and saw it get filtered")
+    print "Created an unsure message, and saw it get filtered"
 
 def run_tests(manager):
     "Filtering tests"
@@ -473,7 +468,7 @@ def run_filter_tests(manager):
 def apply_with_new_config(manager, new_config_dict, func, *args):
     old_config = {}
     friendly_opts = []
-    for name, val in list(new_config_dict.items()):
+    for name, val in new_config_dict.items():
         sect_name, opt_name = name.split(".")
         old_config[sect_name, opt_name] = manager.options.get(sect_name, opt_name)
         manager.options.set(sect_name, opt_name, val)
@@ -482,10 +477,10 @@ def apply_with_new_config(manager, new_config_dict, func, *args):
     try:
         test_name = getattr(func, "__doc__", None)
         if not test_name: test_name = func.__name__
-        print("*" * 10, "Running '%s' with %s" % (test_name, ", ".join(friendly_opts)))
+        print "*" * 10, "Running '%s' with %s" % (test_name, ", ".join(friendly_opts))
         func(*args)
     finally:
-        for (sect_name, opt_name), val in list(old_config.items()):
+        for (sect_name, opt_name), val in old_config.items():
             manager.options.set(sect_name, opt_name, val)
 
 ###############################################################################
@@ -497,7 +492,7 @@ def run_nonfilter_tests(manager):
     # Must enable the filtering code for this test
     msgstore.test_suite_running = False
     try:
-        print("Scanning all your good mail and spam for some sanity checks...")
+        print "Scanning all your good mail and spam for some sanity checks..."
         num_found = num_looked = 0
         num_without_headers = num_without_body = num_without_html_body = 0
         for folder_ids, include_sub in [
@@ -510,33 +505,33 @@ def run_nonfilter_tests(manager):
                     # ipm.note messages we don't want to filter should be
                     # reported.
                     num_looked += 1
-                    if num_looked % 500 == 0: print(" scanned", num_looked, "messages...")
+                    if num_looked % 500 == 0: print " scanned", num_looked, "messages..."
                     if not message.IsFilterCandidate() and \
                         message.msgclass.lower().startswith("ipm.note"):
                         if num_found == 0:
-                            print("*" * 80)
-                            print("WARNING: We found the following messages in your folders that would not be filtered by the addin")
-                            print("If any of these messages should be filtered, we have a bug!")
+                            print "*" * 80
+                            print "WARNING: We found the following messages in your folders that would not be filtered by the addin"
+                            print "If any of these messages should be filtered, we have a bug!"
                         num_found += 1
-                        print(" %s/%s" % (folder.name, message.subject))
+                        print " %s/%s" % (folder.name, message.subject)
                     headers, body, html_body = message._GetMessageTextParts()
                     if not headers: num_without_headers += 1
                     if not body: num_without_body += 1
                     # for HTML, we only check multi-part
-                    temp_obj = rfc822.Message(io.StringIO(headers+"\n\n"))
+                    temp_obj = rfc822.Message(cStringIO.StringIO(headers+"\n\n"))
                     content_type = temp_obj.get("content-type", '')
                     if content_type.lower().startswith("multipart"):
                         if not html_body: num_without_html_body += 1
 
-        print("Checked %d items, %d non-filterable items found" % (num_looked, num_found))
-        print("of these items, %d had no headers, %d had no text body and %d had no HTML" % \
-                (num_without_headers, num_without_body, num_without_html_body))
+        print "Checked %d items, %d non-filterable items found" % (num_looked, num_found)
+        print "of these items, %d had no headers, %d had no text body and %d had no HTML" % \
+                (num_without_headers, num_without_body, num_without_html_body)
     finally:
         msgstore.test_suite_running = True
 
 def run_invalid_id_tests(manager):
     # Do some tests with invalid message and folder IDs.
-    print("Doing some 'invalid ID' tests - you should see a couple of warning, but no errors or tracebacks")
+    print "Doing some 'invalid ID' tests - you should see a couple of warning, but no errors or tracebacks"
     id_no_item = ('0000','0000') # this ID is 'valid' - but there will be no such item
     id_invalid = ('xxxx','xxxx') # this ID is 'invalid' in that the hex-bin conversion fails
     id_empty1 = ('','')
@@ -557,7 +552,7 @@ def run_invalid_id_tests(manager):
         names = manager.FormatFolderNames(ids, False)
         if names.find("<unknown") < 0:
             raise TestFailed("Couldn't find unknown folder in names '%s'" % names)
-    print("Finished 'invalid ID' tests")
+    print "Finished 'invalid ID' tests"
 
 ###############################################################################
 # "Failure" tests - execute some tests while provoking the msgstore to simulate
@@ -585,11 +580,11 @@ def _do_single_failure_spam_test(driver, checkpoint, hr, fail_count = None):
     _do_single_failure_test(driver, False, checkpoint, hr, fail_count)
 
 def _do_single_failure_test(driver, is_ham, checkpoint, hr, fail_count):
-    print("-> Testing MAPI error '%s' in %s" % (mapiutil.GetScodeString(hr),
-                                              checkpoint))
+    print "-> Testing MAPI error '%s' in %s" % (mapiutil.GetScodeString(hr),
+                                              checkpoint)
     # message moved after we have ID, but before opening.
     for msf, folder in driver.GetWatchFolderGenerator():
-        print("Testing in folder '%s'" % msf.GetFQName())
+        print "Testing in folder '%s'" % msf.GetFQName()
         if is_ham:
             msg, words = driver.CreateTestMessageInFolder(HAM, folder)
         else:
@@ -606,8 +601,8 @@ def _do_single_failure_test(driver, is_ham, checkpoint, hr, fail_count):
         finally:
             if msg is not None:
                 msg.Delete()
-    print("<- Finished MAPI error '%s' in %s" % (mapiutil.GetScodeString(hr),
-                                                 checkpoint))
+    print "<- Finished MAPI error '%s' in %s" % (mapiutil.GetScodeString(hr),
+                                                 checkpoint)
 
 def do_failure_tests(manager):
     # We setup msgstore to fail for us, then try a few tests.  The idea is to
@@ -669,11 +664,11 @@ def test(manager):
         if manager.AskQuestion("Do you want to run the non-filter tests?" \
                                "\r\n\r\nThese may take some time"):
             run_nonfilter_tests(manager)
-        print("*" * 20)
-        print("Test suite finished without error!")
-        print("*" * 20)
+        print "*" * 20
+        print "Test suite finished without error!"
+        print "*" * 20
     finally:
-        print("Restoring standard configuration...")
+        print "Restoring standard configuration..."
         # Always restore configuration to how we started.
         msgstore.test_suite_running = False
         manager.test_suite_running = False
@@ -683,7 +678,7 @@ def test(manager):
         SetWaitCursor(0)
 
 if __name__=='__main__':
-    print("NOTE: This will NOT work from the command line")
-    print("(it nearly will, and is useful for debugging the tests")
-    print("themselves, so we will run them anyway!)")
+    print "NOTE: This will NOT work from the command line"
+    print "(it nearly will, and is useful for debugging the tests"
+    print "themselves, so we will run them anyway!)"
     test()

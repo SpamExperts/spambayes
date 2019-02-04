@@ -19,9 +19,7 @@ At least one of either the -H or -S flags must be given on the command line.
 If no features are given on the command line with the -f flag, one or more
 files containing messages with X-Spambayes-Evidence headers must be given.
 """
-from __future__ import print_function
 
-from builtins import str
 import sys
 import getopt
 import re
@@ -35,8 +33,8 @@ prog = sys.argv[0]
 
 def usage(msg=None):
     if msg is not None:
-        print(msg, file=sys.stderr)
-    print(__doc__.strip() % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+    print >> sys.stderr, __doc__.strip() % globals()
 
 def extractmessages(features, mapdb, hamfile, spamfile):
     """extract messages which contain given features"""
@@ -66,8 +64,8 @@ def extractmessages(features, mapdb, hamfile, spamfile):
                 i += 1
                 sys.stdout.write('\r%s: %5d' % (mailfile, i))
                 sys.stdout.flush()
-                print(msg, file=hamfile)
-    print()
+                print >> hamfile, msg
+    print
 
     for mailfile in spamids:
         i = 0
@@ -77,15 +75,15 @@ def extractmessages(features, mapdb, hamfile, spamfile):
                 i += 1
                 sys.stdout.write('\r%s: %5d' % (mailfile, i))
                 sys.stdout.flush()
-                print(msg, file=spamfile)
-    print()
+                print >> spamfile, msg
+    print
 
 def main(args):
     try:
         opts, args = getopt.getopt(args, "hd:S:H:f:",
                                    ["help", "database=", "spamfile=",
                                     "hamfile=", "feature="])
-    except getopt.GetoptError as msg:
+    except getopt.GetoptError, msg:
         usage(msg)
         return 1
 
@@ -106,7 +104,7 @@ def main(args):
         elif opt in ("-S", "--spamfile"):
             spamfile = arg
         elif opt in ("-f", "--feature"):
-            features.add(str(arg, charset))
+            features.add(unicode(arg, charset))
 
     if hamfile is None and spamfile is None:
         usage("At least one of -S or -H are required")
@@ -139,7 +137,7 @@ def main(args):
                     try:
                         s = make_header(decode_header(s)).__unicode__()
                     except:
-                        s = str(s, 'us-ascii', 'replace')
+                        s = unicode(s, 'us-ascii', 'replace')
                     features.add(s)
         if not features:
             usage("No X-Spambayes-Evidence headers found")

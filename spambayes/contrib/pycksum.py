@@ -27,7 +27,6 @@ run it in verbose mode and save the log message.  It catches a fair fraction
 of duplicate spams, probably 3 out of every 4.  (Mail for several email
 addresses funnels into skip@mojam.com.)
 """
-from __future__ import print_function
 
 # message on stdin
 # cmdline arg is db file to store checksums
@@ -36,10 +35,6 @@ from __future__ import print_function
 # with a 0 implies the message is a duplicate and the message is deemed
 # delivered - exiting with a 1 implies the message hasn't been seen before
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import str
-from builtins import range
 import getopt
 import sys
 import email.Parser
@@ -49,9 +44,9 @@ import anydbm
 import re
 import time
 try:
-    import io as StringIO
+    import cStringIO as StringIO
 except ImportError:
-    import io
+    import StringIO
 
 from spambayes.port import md5
 
@@ -97,7 +92,7 @@ def generate_checksum(msg):
     # processes can split those chunks into pieces and consider them
     # separately or in various combinations if desired.
 
-    fp = io.StringIO()
+    fp = StringIO.StringIO()
     g = email.generator.Generator(fp, mangle_from_=False, maxheaderlen=60)
     g.flatten(msg)
     text = fp.getvalue()
@@ -122,10 +117,10 @@ def save_checksum(cksum, f):
     for subsum in (".".join(pieces[:-2]),
                    ".".join(pieces[1:-1]),
                    ".".join(pieces[2:])):
-        if subsum not in db:
+        if not db.has_key(subsum):
             db[subsum] = str(time.time())
             if len(db) > maxdblen:
-                items = [(float(db[k]), k) for k in list(db.keys())]
+                items = [(float(db[k]), k) for k in db.keys()]
                 items.sort()
                 # the -20 brings us down a bit below the max so we aren't
                 # constantly running this chunk of code
@@ -153,7 +148,7 @@ def main(args):
     msg = email.Parser.Parser().parse(sys.stdin)
     cksum = generate_checksum(msg)
     if dbf is None:
-        print(cksum)
+        print cksum
         result = 1
         disp = 'nodb'
     else:

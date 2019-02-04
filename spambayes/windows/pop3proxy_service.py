@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Run the sb_server as a WinNT service.  Should work on Windows 2000
 # and Windows XP.
 #
@@ -17,10 +16,6 @@ from __future__ import print_function
 
 # Originally written by Mark Hammond.
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import range
-from builtins import object
 import os
 import sys
 import logging
@@ -77,12 +72,12 @@ class ServiceEventLogHandler(logging.Handler):
         """
         if raiseExceptions:
             try:
-                import io as StringIO
+                import cStringIO as StringIO
             except ImportError:
-                import io
+                import StringIO
             import traceback
             ei = sys.exc_info()
-            msg = io.StringIO()
+            msg = StringIO.StringIO()
             traceback.print_exception(ei[0], ei[1], ei[2], None, msg)
             msg.seek(0)
             self.servicemanager.LogErrorMsg(msg)
@@ -175,7 +170,7 @@ if not hasattr(sys, "frozen"):
 # Rest of the standard Python modules we use.
 import traceback
 import threading
-import io
+import cStringIO
 
 # The spambayes imports we need.
 import sb_server
@@ -246,10 +241,10 @@ class Service(win32serviceutil.ServiceFramework):
                 self.event_stopped.wait(1)
                 if self.event_stopped.isSet():
                     break
-                print("The service is still shutting down...")
+                print "The service is still shutting down..."
             else:
                 # eeek - we timed out - give up in disgust.
-                print("The worker failed to stop - aborting it anyway")
+                print "The worker failed to stop - aborting it anyway"
         except KeyboardInterrupt:
             pass
 
@@ -270,17 +265,17 @@ class Service(win32serviceutil.ServiceFramework):
                 sb_server.start()
             except SystemExit:
                 # user requested shutdown
-                print("pop3proxy service shutting down due to user request")
+                print "pop3proxy service shutting down due to user request"
             except:
                 # Otherwise an error we should log.
-                ob = io.StringIO()
+                ob = cStringIO.StringIO()
                 traceback.print_exc(file=ob)
 
                 message = "The pop3proxy service failed with an " \
                           "unexpected error\r\n\r\n" + ob.getvalue()
 
                 # print it too, so any other log we have gets it.
-                print(message)
+                print message
                 # Log an error event to the event log.
                 import servicemanager
                 servicemanager.LogErrorMsg(message)
@@ -299,6 +294,6 @@ if __name__=='__main__':
                                           "..", "SpamBayesData")
             data_directory = os.path.abspath(data_directory)
             if not os.path.exists(data_directory):
-                print("Creating data directory at", data_directory)
+                print "Creating data directory at", data_directory
                 os.makedirs(data_directory)
     win32serviceutil.HandleCommandLine(Service)

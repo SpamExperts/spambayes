@@ -1,7 +1,6 @@
-from builtins import object
 from spambayes.Options import options
 
-class Test(object):
+class Test:
     # Pass a classifier instance (an instance of Bayes).
     # Loop:
     #     # Train the classifer with new ham and spam.
@@ -134,7 +133,7 @@ class Test(object):
     def unsures(self):
         return self.unsure_examples
 
-class _Example(object):
+class _Example:
     def __init__(self, name, words):
         self.name = name
         self.words = words

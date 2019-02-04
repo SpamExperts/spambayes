@@ -1,9 +1,5 @@
-from __future__ import print_function
 # Exports your ham and spam folders to a standard SpamBayes test directory.
 
-from builtins import input
-from builtins import str
-from builtins import range
 import sys, os, shutil
 from manager import GetManager
 
@@ -105,7 +101,7 @@ def _export_folders(manager, root, buckets, folder_ids, include_sub, old_style):
     num = 0
     store = manager.message_store
     for folder in store.GetFolderGenerator(folder_ids, include_sub):
-        print("", folder.name)
+        print "", folder.name
         for message in folder.GetMessageGenerator():
             this_dir = os.path.join(root,  choice(buckets))
             # filename is the EID.txt
@@ -114,8 +110,8 @@ def _export_folders(manager, root, buckets, folder_ids, include_sub, old_style):
             except KeyboardInterrupt:
                 raise
             except:
-                print("Failed to get message text for '%s': %s" \
-                      % (message.GetSubject(), sys.exc_info()[1]))
+                print "Failed to get message text for '%s': %s" \
+                      % (message.GetSubject(), sys.exc_info()[1])
                 continue
 
             fname = os.path.join(this_dir, message.GetID()[1]) + ".txt"
@@ -128,12 +124,12 @@ def _export_folders(manager, root, buckets, folder_ids, include_sub, old_style):
 # This does all the work.  'directory' is the parent directory for the
 # generated Ham and Spam sub-folders.
 def export(directory, num_buckets, old_style):
-    print("Loading bayes manager...")
+    print "Loading bayes manager..."
     manager = GetManager()
     config = manager.config
     num_spam, num_ham, buckets = BuildBuckets(manager, num_buckets)
-    print("Have", num_spam, "spam and", num_ham, "ham to export,", end=' ')
-    print("spread over", len(buckets), "directories.")
+    print "Have", num_spam, "spam and", num_ham, "ham to export,",
+    print "spread over", len(buckets), "directories."
 
     for sub in "Spam", "Ham":
         if os.path.exists(os.path.join(directory, sub)):
@@ -142,30 +138,30 @@ def export(directory, num_buckets, old_style):
             d = os.path.join(directory, sub, b)
             os.makedirs(d)
 
-    print("Exporting spam...")
+    print "Exporting spam..."
     num = _export_folders(manager,
                           os.path.join(directory, "Spam"),
                           buckets,
                           config.training.spam_folder_ids,
                           config.training.spam_include_sub,
                           old_style)
-    print("Exported", num, "spam messages.")
+    print "Exported", num, "spam messages."
 
-    print("Exporting ham...")
+    print "Exporting ham..."
     num = _export_folders(manager,
                           os.path.join(directory, "Ham"),
                           buckets,
                           config.training.ham_folder_ids,
                           config.training.ham_include_sub,
                           old_style)
-    print("Exported", num, "ham messages.")
+    print "Exported", num, "ham messages."
 
 def main():
     import getopt
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], "hqon:")
-    except getopt.error as d:
+    except getopt.error, d:
         usage(d)
     quiet = 0
     old_style = False
@@ -194,24 +190,24 @@ def main():
         usage("-n must be at least 1.")
 
     directory = os.path.abspath(directory)
-    print("This program will export your Outlook Ham and Spam folders")
-    print("to the directory '%s'" % directory)
+    print "This program will export your Outlook Ham and Spam folders"
+    print "to the directory '%s'" % directory
     if os.path.exists(directory):
-        print("*******")
-        print("WARNING: all existing files in '%s' will be deleted" % directory)
-        print("*******")
+        print "*******"
+        print "WARNING: all existing files in '%s' will be deleted" % directory
+        print "*******"
     if not quiet:
-        input("Press enter to continue, or Ctrl+C to abort.")
+        raw_input("Press enter to continue, or Ctrl+C to abort.")
     export(directory, num_buckets, old_style=old_style)
 
 # Display errormsg (if specified), a blank line, and usage information; then
 # exit with status 1 (usage doesn't return).
 def usage(errormsg=None):
     if errormsg:
-        print(str(errormsg))
-        print()
+        print str(errormsg)
+        print
 
-    print(""" \
+    print """ \
 Usage: %s [-h] [-q] [-n nsets] [directory]
 
 -h : help - display this msg and stop
@@ -230,7 +226,7 @@ If 'directory' exists, it will be recursively deleted before
 the export (but you will be asked to confirm unless -q is given).""" \
             % (os.path.basename(sys.argv[0]),
                NUM_BUCKETS,
-               DEFAULT_DIRECTORY))
+               DEFAULT_DIRECTORY)
     sys.exit(1)
 
 if __name__=='__main__':

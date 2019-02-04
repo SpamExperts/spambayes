@@ -80,10 +80,8 @@ or start spewing endless error messages.  It's best to exit Evo before killing
 sb_xmlrpcserver.py.
 """
 
-from future import standard_library
-standard_library.install_aliases()
 import sys
-import xmlrpc.client
+import xmlrpclib
 from spambayes.Options import options
 
 RPCURL = 'http://localhost:8881'
@@ -92,8 +90,8 @@ RPCURL = 'http://localhost:8881'
 def main():
     msg = sys.stdin.read()
     try:
-        server = xmlrpc.client.ServerProxy(RPCURL)
-        score = server.score(xmlrpc.client.Binary(msg))
+        server = xmlrpclib.ServerProxy(RPCURL)
+        score = server.score(xmlrpclib.Binary(msg))
     except:
         import traceback
         traceback.print_exc()

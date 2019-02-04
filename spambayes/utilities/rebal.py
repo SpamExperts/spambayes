@@ -35,7 +35,6 @@ difficult to recover from that mistake.
 
 See the module comments for examples.
 """
-from __future__ import print_function
 
 # Examples:
 #
@@ -63,8 +62,6 @@ from __future__ import print_function
 # Data/Ham/reservoir directory.  The second run randomly parcels out 300 files
 # to each of the Data/Ham/Set directories.
 
-from builtins import str
-from builtins import input
 import os
 import sys
 import random
@@ -82,9 +79,9 @@ DRYRUN = False
 
 def usage(msg=None):
     if msg:
-        print(str(msg), file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__ % globals(), file=sys.stderr)
+        print >> sys.stderr, str(msg)
+        print >> sys.stderr
+    print >> sys.stderr, __doc__ % globals()
 
 def migrate(f, targetdir, verbose):
     """Move f into targetdir, renaming if needed to avoid name clashes.
@@ -101,7 +98,7 @@ def migrate(f, targetdir, verbose):
         digits = random.randrange(100000000)
         out = os.path.join(targetdir, str(digits) + ext)
     if verbose:
-        print("moving", f, "to", out)
+        print "moving", f, "to", out
     os.rename(f, out)
     return os.path.basename(out)
 
@@ -114,7 +111,7 @@ def main(args):
 
     try:
         opts, args = getopt.getopt(args, "dr:s:t:n:vqcQh")
-    except getopt.GetoptError as msg:
+    except getopt.GetoptError, msg:
         usage(msg)
         return 1
 
@@ -157,13 +154,13 @@ def main(args):
             resdir = RESDIR
 
     if not os.path.exists(resdir):
-        print("reservoir directory %s doesn't exist" % resdir, file=sys.stderr)
+        print >> sys.stderr, "reservoir directory %s doesn't exist" % resdir
         return 1
     res = os.listdir(resdir)
 
     dirs = glob.glob(setprefix + "*")
     if not dirs:
-        print("no directories starting with", setprefix, "exist.", file=sys.stderr)
+        print >> sys.stderr, "no directories starting with", setprefix, "exist."
         return 1
 
     # stuff <- list of (directory, files) pairs, where directory is the
@@ -176,13 +173,13 @@ def main(args):
         stuff.append((d, fs))
 
     if nperdir * len(dirs) > n:
-        print("not enough files to go around - use lower -n.", file=sys.stderr)
+        print >> sys.stderr, "not enough files to go around - use lower -n."
         return 1
 
     # weak check against mixing ham and spam
     if ((setprefix.find("Ham") >= 0 and resdir.find("Spam") >= 0) or
         (setprefix.find("Spam") >= 0 and resdir.find("Ham") >= 0)):
-        yn = input("Reservoir and Set dirs appear not to match. "
+        yn = raw_input("Reservoir and Set dirs appear not to match. "
                        "Continue? (y/n) ")
         if yn.lower()[0:1] != 'y':
             return 1
@@ -197,8 +194,8 @@ def main(args):
         movethese = fs[nperdir:]
         del fs[nperdir:]
         if dryrun:
-            print("would move", len(movethese), "files from", d, \
-                  "to reservoir", resdir)
+            print "would move", len(movethese), "files from", d, \
+                  "to reservoir", resdir
             res.extend(movethese)
         else:
             for f in movethese:
@@ -219,13 +216,13 @@ def main(args):
         movethese = res[-numtomove:]
         del res[-numtomove:]
         if dryrun:
-            print("would move", len(movethese), "files from reservoir", \
-                  resdir, "to", d)
+            print "would move", len(movethese), "files from reservoir", \
+                  resdir, "to", d
         else:
             for f in movethese:
                 if confirm:
-                    print(file(os.path.join(resdir, f)).read())
-                    ok = input('good enough? ').lower()
+                    print file(os.path.join(resdir, f)).read()
+                    ok = raw_input('good enough? ').lower()
                     if not ok.startswith('y'):
                         continue
                 migrate(os.path.join(resdir, f), d, verbose)

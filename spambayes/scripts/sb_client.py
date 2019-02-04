@@ -6,11 +6,8 @@ Just feed it your mail on stdin, and it spits out the same message
 with the spambayes score in a new X-Spambayes-Disposition header.
 
 """
-from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
-import xmlrpc.client
+import xmlrpclib
 import sys
 
 RPCBASE = "http://localhost:65000"
@@ -18,15 +15,15 @@ RPCBASE = "http://localhost:65000"
 def main():
     msg = sys.stdin.read()
     try:
-        x = xmlrpc.client.ServerProxy(RPCBASE)
-        m = xmlrpc.client.Binary(msg)
+        x = xmlrpclib.ServerProxy(RPCBASE)
+        m = xmlrpclib.Binary(msg)
         out = x.filter(m)
-        print(out.data)
+        print out.data
     except:
         if __debug__:
             import traceback
             traceback.print_exc()
-        print(msg)
+        print msg
 
 if __name__ == "__main__":
     main()

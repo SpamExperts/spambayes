@@ -1,5 +1,4 @@
 """Spam/ham profile for a single VM user."""
-from __future__ import print_function
 
 import ZODB
 from ZODB.PersistentList import PersistentList
@@ -27,13 +26,13 @@ def log(s):
     global _start
     if _start is None:
         _start = time.time()
-    print(round(time.time() - _start, 2), s)
+    print round(time.time() - _start, 2), s
 
 
 class IterOOBTree(OOBTree):
 
     def iteritems(self):
-        return list(self.items())
+        return self.items()
 
 class WordInfo(Persistent):
 
@@ -105,12 +104,12 @@ class Profile(Persistent):
             # It's important not to commit a transaction until
             # after update_probabilities is called in update().
             # Otherwise some new entries will cause scoring to fail.
-            for msg in list(added.keys()):
+            for msg in added.keys():
                 self.classifier.learn(tokenize(msg), is_spam)
             del added
             get_transaction().commit(1)
             log("learned")
-            for msg in list(removed.keys()):
+            for msg in removed.keys():
                 self.classifier.unlearn(tokenize(msg), is_spam)
             if removed:
                 log("unlearned")

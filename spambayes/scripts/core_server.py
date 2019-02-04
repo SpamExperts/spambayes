@@ -33,13 +33,11 @@ Usage:
         All command line arguments and switches take their default
         values from the [html_ui] section of bayescustomize.ini.
 """
-from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
-from builtins import str
 __author__ = "Richie Hindle <richie@entrian.com>"
 __credits__ = "Tim Peters, Neale Pickett, Tim Stone, all the Spambayes folk."
 
@@ -111,9 +109,8 @@ def _addressAndPort(s):
     else:
         return '', int(s)
 
-def _addressPortStr(xxx_todo_changeme):
+def _addressPortStr((addr, port)):
     """Encode a string representing a port to bind to, with optional address."""
-    (addr, port) = xxx_todo_changeme
     if not addr:
         return str(port)
     else:
@@ -144,8 +141,8 @@ def run():
     # Read the arguments.
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hbd:p:l:u:o:P:')
-    except getopt.error as msg:
-        print(str(msg) + '\n\n' + __doc__, file=sys.stderr)
+    except getopt.error, msg:
+        print >> sys.stderr, str(msg) + '\n\n' + __doc__
         sys.exit()
 
     state = CoreState()
@@ -153,7 +150,7 @@ def run():
 
     for opt, arg in opts:
         if opt == '-h':
-            print(__doc__, file=sys.stderr)
+            print >> sys.stderr, __doc__
             sys.exit()
         elif opt == '-b':
             state.launch_ui = True
@@ -169,13 +166,13 @@ def run():
             state.plugin = load_plugin(arg, state)
 
     if state.plugin is None:
-        print("No plugin argument (-P) was given.", file=sys.stderr)
-        print(__doc__, file=sys.stderr)
+        print >> sys.stderr, "No plugin argument (-P) was given."
+        print >> sys.stderr, __doc__
         sys.exit()
 
     # Let the user know what they are using...
     v = get_current_version()
-    print("%s\n" % (v.get_long_version("SpamBayes Core Proxy"),))
+    print "%s\n" % (v.get_long_version("SpamBayes Core Proxy"),)
 
     if 0 <= len(args) <= 2:
         # Normal usage, with optional server name and port number.
@@ -187,8 +184,9 @@ def run():
         try:
             state.prepare()
         except AlreadyRunningException:
-            print("ERROR: The proxy is already running on this machine.", file=sys.stderr)
-            print("Please stop the existing proxy and try again", file=sys.stderr)
+            print  >> sys.stderr, \
+                   "ERROR: The proxy is already running on this machine."
+            print  >> sys.stderr, "Please stop the existing proxy and try again"
             return
 
         # kick everything off
@@ -198,10 +196,10 @@ def run():
             state.close()
 
     else:
-        print(__doc__, file=sys.stderr)
+        print >> sys.stderr, __doc__
 
 if __name__ == '__main__':
     try:
         run()
     except KeyboardInterrupt:
-        print("bye!")
+        print "bye!"

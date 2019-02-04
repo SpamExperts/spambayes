@@ -21,11 +21,7 @@ has gotten so far.
 
 Two of these summary files can later be fed to cmp.py.
 """
-from __future__ import division
-from __future__ import print_function
 
-from builtins import map
-from past.utils import old_div
 import sys
 
 """
@@ -44,17 +40,17 @@ def doit(basename):
         ifile = file(basename + '.txt')
     except IOError:
         ifile = file(basename)
-    interesting = [line for line in ifile if line.startswith('-> ')]
+    interesting = filter(lambda line: line.startswith('-> '), ifile)
     ifile.close()
 
     oname = basename + 's.txt'
     ofile = file(oname, 'w')
-    print(basename, '->', oname)
+    print basename, '->', oname
 
     def dump(*stuff):
         msg = ' '.join(map(str, stuff))
-        print(msg)
-        print(msg, file=ofile)
+        print msg
+        print >> ofile, msg
 
     ntests = nfn = nfp = 0
     sumfnrate = sumfprate = 0.0
@@ -95,8 +91,8 @@ def doit(basename):
 
     dump('total unique false pos', nfp)
     dump('total unique false neg', nfn)
-    dump('average fp %', old_div(sumfprate, ntests))
-    dump('average fn %', old_div(sumfnrate, ntests))
+    dump('average fp %', sumfprate / ntests)
+    dump('average fn %', sumfnrate / ntests)
 
 for name in sys.argv[1:]:
     doit(name)

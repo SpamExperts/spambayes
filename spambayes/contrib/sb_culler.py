@@ -29,13 +29,7 @@ Updated 2004/10/26
 
 This program requires Python 2.3 or newer.
 """
-from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import input
-from builtins import range
-from builtins import object
 import socket
 socket.setdefaulttimeout(10)
 
@@ -57,12 +51,12 @@ KEEP_IN_MAILBOX = "keep in mailbox"
 SPAM = "spam"
 VIRUS = "virus"
 
-class Logger(object):
+class Logger:
     def __init__(self):
         self.tests = {}
         self.actions = {}
 
-    def __bool__(self):
+    def __nonzero__(self):
         return bool(self.tests) and bool(self.actions)
 
     def pass_test(self, name):
@@ -72,12 +66,12 @@ class Logger(object):
         self.actions[name] = self.actions.get(name, 0) + 1
 
     def accept(self, text):
-        print(text)
+        print text
 
     def info(self, text):
-        print(text)
+        print text
 
-class MessageInfo(object):
+class MessageInfo:
     """reference to an email message in a mailbox"""
     def __init__(self, mailbox, i, msg, text):
         self.mailbox = mailbox
@@ -85,7 +79,7 @@ class MessageInfo(object):
         self.msg = msg
         self.text = text
 
-class Filter(object):
+class Filter:
     """if message passes test then do the given action"""
     def __init__(self, test, action):
         self.test = test
@@ -99,7 +93,7 @@ class Filter(object):
         return False
             
 
-class AppendFile(object):
+class AppendFile:
     """Action: append message text to the given filename"""
     def __init__(self, filename):
         self.filename = filename
@@ -129,7 +123,7 @@ def KEEP(mi, log):
 KEEP.descr = "keep in mailbox"
         
 
-class Duplicate(object):
+class Duplicate:
     def __init__(self):
         self.unique = {}
     def __call__(self, mi, log):
@@ -140,7 +134,7 @@ class Duplicate(object):
         self.unique[digest] = 1
         return False
 
-class IllegalDeliveredTo(object):
+class IllegalDeliveredTo:
     def __init__(self, names):
         self.names = names
     def __call__(self, mi, log):
@@ -156,7 +150,7 @@ class IllegalDeliveredTo(object):
         log.pass_test(SPAM)
         return "sent to random email"
 
-class SpamAssassin(object):
+class SpamAssassin:
     def __init__(self, level = 8):
         self.level = level
     def __call__(self, mi, log):
@@ -165,7 +159,7 @@ class SpamAssassin(object):
             return "assassinated!"
         return False
 
-class WhiteListFrom(object):
+class WhiteListFrom:
     """Test: Read a list of email addresses to use a 'from' whitelist"""
     def __init__(self, filename):
         self.filename = filename
@@ -180,7 +174,7 @@ class WhiteListFrom(object):
     def _load_if_needed(self):
         mtime = os.path.getmtime(self.filename)
         if mtime != self._mtime:
-            print("Reloading", self.filename)
+            print "Reloading", self.filename
             self._mtime = mtime
             self._load()
         
@@ -194,7 +188,7 @@ class WhiteListFrom(object):
             return "it is in 'from' white list"
         return False
         
-class WhiteListSubstrings(object):
+class WhiteListSubstrings:
     """Test: Whitelist message if named field contains one of the substrings"""
     def __init__(self, field, substrings):
         self.field = field
@@ -210,7 +204,7 @@ class WhiteListSubstrings(object):
                 return "it matches '%s' white list" % (self.field,)
         return False
 
-class IsSpam(object):
+class IsSpam:
     """Test: use SpamBayes to tell if something is spam"""
     def __init__(self, sb_hammie, spam_cutoff = None):
         self.sb_hammie = sb_hammie
@@ -224,7 +218,7 @@ class IsSpam(object):
             log.pass_test(SPAM)
             return "it is spam (%4.3f)" % prob
         if VERBOSE_LEVEL > 1:
-            print("not spam (%4.3f)" % prob)
+            print "not spam (%4.3f)" % prob
         return False
 
 # Simple check for executable attachments
@@ -267,8 +261,8 @@ def open_mailbox(server, username, password, debuglevel = 0):
         mailbox.set_debuglevel(debuglevel)
         if VERBOSE_LEVEL > 1:
             count, size = mailbox.stat()
-            print("Message count:   ", count)
-            print("Total bytes  :   ", size)
+            print "Message count:   ", count
+            print "Total bytes  :   ", size
         
     except:
         mailbox.quit()
@@ -301,7 +295,7 @@ class Filters(list):
 
         for i in range(1, count+1):
             if (i-1) % 10 == 0:
-                print(" == %d/%d ==" % (i, count))
+                print " == %d/%d ==" % (i, count)
             # Kevin's code used -1, but -1 doesn't work for one of
             # my POP accounts, while a million does.
             # Don't use retr because that may mark the message as
@@ -328,11 +322,10 @@ class Filters(list):
             
         return log
 
-def filter_server(xxx_todo_changeme, filters):
-    (server, user, pwd) = xxx_todo_changeme
+def filter_server( (server, user, pwd), filters):
     if VERBOSE_LEVEL:
-        print("=" * 78)
-        print("Processing %s on %s" % (user, server))
+        print "=" * 78
+        print "Processing %s on %s" % (user, server)
 
     mailbox = open_mailbox(server, user, pwd)
     try:
@@ -344,7 +337,7 @@ def filter_server(xxx_todo_changeme, filters):
 
 ##### User-specific
 
-import time, sys, urllib.request, urllib.parse, urllib.error
+import time, sys, urllib
 
 # A simple text interface.
 
@@ -368,11 +361,11 @@ def restart_network():
     # That usually means my ISP dropped my DHCP and I need to
     # bounce my Linksys firewall/DHCP/hub.
     
-    print("Network appears to be down.  Bringing Linksys down then up...")
+    print "Network appears to be down.  Bringing Linksys down then up..."
     try:
         # Note this this example uses the default password.  YMMV.
-        urllib.request.urlopen("http://:admin@192.168.1.1/Gozila.cgi?pppoeAct=2").read()
-        urllib.request.urlopen("http://:admin@192.168.1.1/Gozila.cgi?pppoeAct=1").read()
+        urllib.urlopen("http://:admin@192.168.1.1/Gozila.cgi?pppoeAct=2").read()
+        urllib.urlopen("http://:admin@192.168.1.1/Gozila.cgi?pppoeAct=1").read()
     except KeyboardInterrupt:
         raise
     except:
@@ -386,8 +379,8 @@ def wait(t, delta = 10):
     for i in range(t, -1, -delta):
         if VERBOSE_LEVEL:
             if not first:
-                print("..", end=' ')
-            print(i, end=' ')
+                print "..",
+            print i,
             sys.stdout.flush()
 
         time.sleep(min(i, delta))
@@ -396,7 +389,7 @@ def wait(t, delta = 10):
 
         first = False
 
-    print()
+    print
 
 
 def main():
@@ -460,8 +453,8 @@ def main():
             try:
                 log = filter_server( (server, user, pwd), filters)
             except KeyboardInterrupt:
-                input("Press enter to continue. ")
-            except Exception:
+                raw_input("Press enter to continue. ")
+            except StandardError:
                 raise
             except:
                 error_flag = True
@@ -469,14 +462,14 @@ def main():
                 continue
 
             if VERBOSE_LEVEL > 1 and log:
-                print("  ** Summary **")
+                print "  ** Summary **"
                 for x in (log.tests, log.actions):
-                    items = list(x.items())
+                    items = x.items()
                     if items:
                         items.sort()
                         for k, v in items:
-                            print("  %s: %s" % (k, v))
-                        print()
+                            print "  %s: %s" % (k, v)
+                        print
 
             cumulative_log[SPAM] += log.tests.get(SPAM, 0)
             cumulative_log[VIRUS] += log.tests.get(VIRUS, 0)
@@ -485,20 +478,20 @@ def main():
             initial_log = cumulative_log.copy()
             start_time = time.time()
             if VERBOSE_LEVEL:
-                print("Stats: %d spams, %d virus" % (
-                    initial_log[SPAM], initial_log[VIRUS]))
+                print "Stats: %d spams, %d virus" % (
+                    initial_log[SPAM], initial_log[VIRUS])
         else:
             if VERBOSE_LEVEL:
                 delta_t = time.time() - start_time
                 delta_t = max(delta_t, 1)  #
 
-                print("Stats: %d spams (%.2f/hr), %d virus (%.2f/hr)" % (
+                print "Stats: %d spams (%.2f/hr), %d virus (%.2f/hr)" % (
                     cumulative_log[SPAM],
                     (cumulative_log[SPAM] - initial_log[SPAM]) /
                              delta_t * 3600,
                     cumulative_log[VIRUS],
                     (cumulative_log[VIRUS] - initial_log[VIRUS]) /
-                             delta_t * 3600))
+                             delta_t * 3600)
         
         if error_flag:
             error_count += 1
@@ -513,9 +506,9 @@ def main():
                 wait(delay)
                 break
             except KeyboardInterrupt:
-                print()
+                print
                 while 1:
-                    cmd = input("enter, delay, or quit? ")
+                    cmd = raw_input("enter, delay, or quit? ")
                     if cmd in ("q", "quit"):
                         raise SystemExit(0)
                     elif cmd == "":
@@ -525,7 +518,7 @@ def main():
                         delay = int(cmd)
                         break
                     else:
-                        print("Unknown command.")
+                        print "Unknown command."
 
 if __name__ == "__main__":
     main()

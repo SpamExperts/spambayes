@@ -18,9 +18,7 @@ Where OPTIONS is one or more of:
     -o section:option:value
         set [section, option] in the options database to value.
 """
-from __future__ import print_function
 
-from builtins import range
 import getopt
 import sys
 import os
@@ -39,9 +37,9 @@ nmess = None            # -m
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__ % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__ % globals()
     sys.exit(code)
 
 def distribute(dir):
@@ -104,7 +102,7 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hn:g:m:o:', ['option='])
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(2, msg)
 
     if args:
@@ -127,7 +125,7 @@ def main():
 
     distribute(hamdir)
     distribute(spamdir)
-    print()
+    print
 
 
 if __name__ == "__main__":

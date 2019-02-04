@@ -19,10 +19,7 @@ Sort and group the messages in the Data hierarchy.
 Run this prior to mksets.py for setting stuff up for testing of
 chronological incremental training.
 """
-from __future__ import division
-from __future__ import print_function
 
-from past.utils import old_div
 import sys
 import os
 import glob
@@ -47,7 +44,7 @@ def get_time(fpath):
         if line.lower().startswith("received:"):
             break
     else:
-        print("\nNo Received header found.")
+        print "\nNo Received header found."
         fh.close()
         return None
     # Paste on continuation lines, if any.
@@ -61,8 +58,8 @@ def get_time(fpath):
     # RFC 2822 says the date-time field must follow a semicolon at the end.
     i = received.rfind(';')
     if i < 0:
-        print("\n" + received)
-        print("No semicolon found in Received header.")
+        print "\n" + received
+        print "No semicolon found in Received header."
         return None
     # We only want the part after the semicolon.
     datestring = received[i+1:]
@@ -70,17 +67,17 @@ def get_time(fpath):
     datestring = ' '.join(datestring.split())
     as_tuple = parsedate_tz(datestring)
     if as_tuple is None:
-        print("\n" + received)
-        print("Couldn't parse the date: %r" % datestring)
+        print "\n" + received
+        print "Couldn't parse the date: %r" % datestring
         return None
     return mktime_tz(as_tuple)
 
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__ % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__ % globals()
     sys.exit(code)
 
 def main():
@@ -91,7 +88,7 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hqao:', ['option='])
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(1, msg)
 
     loud = True
@@ -108,7 +105,7 @@ def main():
 
     data = []   # list of (time_received, dirname, basename) triples
     if loud:
-        print("Scanning everything")
+        print "Scanning everything"
     now = time.time()
     hdir = os.path.dirname(options["TestDriver", "ham_directories"])
     sdir = os.path.dirname(options["TestDriver", "spam_directories"])
@@ -129,26 +126,26 @@ def main():
         data.append((when_received,) + split(name))
 
     if loud:
-        print("")
-        print("Sorting ...")
+        print ""
+        print "Sorting ..."
     data.sort()
 
     # First rename all the files to a form we can't produce in the end.
     # This is to protect against name clashes in case the files are
     # already named according to the scheme we use.
     if loud:
-        print("Renaming first pass ...")
+        print "Renaming first pass ..."
     for dummy, dirname, basename in data:
         os.rename(join(dirname, basename),
                   join(dirname, "-" + basename))
 
     if loud:
-        print("Renaming second pass ...")
+        print "Renaming second pass ..."
     earliest = data[0][0]  # timestamp of earliest msg received
     i = 0
     for when_received, dirname, basename in data:
         extension = os.path.splitext(basename)[-1]
-        group = int(old_div((when_received - earliest), SECONDS_PER_DAY))
+        group = int((when_received - earliest) / SECONDS_PER_DAY)
         newbasename = "%04d-%06d" % (group, i)
         os.rename(join(dirname, "-" + basename),
                   join(dirname, newbasename + extension))

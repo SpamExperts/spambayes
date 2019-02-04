@@ -17,16 +17,15 @@ Where:
 
 This program will overwrite bayescustomize.ini!
 """
-from __future__ import print_function
 
 import sys
 
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__ % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__ % globals()
     sys.exit(code)
 
 program = sys.argv[0]
@@ -53,7 +52,7 @@ def score(vars):
     mkini(vars)
     status = os.system('%s > loop.out'%command)
     if status != 0:
-        print("Error status from subcommand", file=sys.stderr)
+        print >> sys.stderr, "Error status from subcommand"
         sys.exit(status)
     f = open('loop.out', 'r')
     txt = f.readlines()
@@ -61,8 +60,8 @@ def score(vars):
     cost = float(txt[-1].split()[2][1:])
     f.close()
     os.rename('loop.out','loop.out.old')
-    print(''.join(txt[-20:])[:-1])
-    print("x=%.4f p=%.4f s=%.4f %.2f"%(tuple(vars)+(cost,)))
+    print ''.join(txt[-20:])[:-1]
+    print "x=%.4f p=%.4f s=%.4f %.2f"%(tuple(vars)+(cost,))
     sys.stdout.flush()
     return -cost
 
@@ -70,14 +69,14 @@ def main():
     import spambayes.optimize
     finish=spambayes.optimize.SimplexMaximize(start,err,score)
     mkini(finish)
-    print("Best result left in bayescustomize.ini")
+    print "Best result left in bayescustomize.ini"
 
 if __name__ == "__main__":
     import getopt
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hc:')
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(1, msg)
 
     command = None

@@ -27,14 +27,11 @@ To do:
    spambayes id) could also be done.
  o Suggestions?
 """
-from __future__ import absolute_import
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
-from builtins import str
-from builtins import range
 __author__ = "Tony Meyer <ta-meyer@ihug.co.nz>, Tim Stone"
 __credits__ = "All the Spambayes folk."
 
@@ -172,10 +169,10 @@ class IMAPUserInterface(UserInterface.UserInterface):
         """Called by the config page when the user saves some new options, or
         restores the defaults."""
         # Re-read the options.
-        from . import Options
+        import Options
         Options.load_options()
         global options
-        from .Options import options
+        from Options import options
         self.change_db()
 
     def onSave(self, how):
@@ -217,7 +214,7 @@ class IMAPUserInterface(UserInterface.UserInterface):
 
     def _login_to_imap(self):
         new_imaps = []
-        for i in range(len(self.imaps)):
+        for i in xrange(len(self.imaps)):
             imap = self.imaps[i]
             imap_logged_in = self._login_to_imap_server(imap, i)
             if imap_logged_in:
@@ -270,7 +267,7 @@ class IMAPUserInterface(UserInterface.UserInterface):
                                      _("Please check username/password details."))
             self.write(content)
             return None
-        except LoginFailure as e:
+        except LoginFailure, e:
             content = self._buildBox(_("Error"), None, str(e))
             self.write(content)
             return None
@@ -313,7 +310,7 @@ class IMAPUserInterface(UserInterface.UserInterface):
            parms["how"] == _("Save Filter Folders"):
             del parms["how"]
             self.parm_ini_map = ()
-            for opt, value in list(parms.items()):
+            for opt, value in parms.items():
                 del parms[opt]
                 # Under strange circumstances this could break,
                 # so if we can think of a better way to do this,
@@ -322,7 +319,7 @@ class IMAPUserInterface(UserInterface.UserInterface):
                     opt = opt[:-len(value)]
                 self.parm_ini_map += ("imap", opt),
                 key = "imap_" + opt
-                if key in parms:
+                if parms.has_key(key):
                     parms[key] += ',' + value
                 else:
                     parms[key] = value

@@ -2,10 +2,6 @@
 
 """Implement just enough of a csv parser to support sb_dbexpimp.py's needs."""
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import str
-from builtins import object
 import sys
 import re
 
@@ -16,7 +12,7 @@ elif sys.platform == "mac":
 else:
     EOL = "\n"
 
-class reader(object):
+class reader:
     def __init__(self, fp):
         self.fp = fp
 
@@ -30,7 +26,7 @@ class reader(object):
             line = line[:-1]
         return line
 
-    def __next__(self):
+    def next(self):
         line = self._readline()
         if not line:
             raise StopIteration
@@ -70,7 +66,7 @@ class reader(object):
                         field.append("\n")
                         line = self._readline()
                         if not line:
-                            raise IOError("end-of-file during parsing")
+                            raise IOError, "end-of-file during parsing"
             else:
                 # unquoted field
                 field = []
@@ -85,14 +81,14 @@ class reader(object):
             result.append("".join(field))
         return result
 
-class writer(object):
+class writer:
     def __init__(self, fp):
         self.fp = fp
 
     def writerow(self, row):
         result = []
         for item in row:
-            if isinstance(item, str):
+            if isinstance(item, unicode):
                 item = item.encode("utf-8")
             else:
                 item = str(item)
@@ -105,20 +101,20 @@ class writer(object):
 
 if __name__ == "__main__":
     import unittest
-    import io
+    import StringIO
 
     class TestCase(unittest.TestCase):
         def test_reader(self):
-            f = io.StringIO('''\
+            f = StringIO.StringIO('''\
 """rare""",1,0
 "beginning;
 	end=""itinhh.txt""",1,0
 ''')
             f.seek(0)
             rdr = reader(f)
-            self.assertEqual(next(rdr), ['"rare"', '1', '0'])
-            self.assertEqual(next(rdr),
+            self.assertEqual(rdr.next(), ['"rare"', '1', '0'])
+            self.assertEqual(rdr.next(),
                              ['beginning;\n\tend="itinhh.txt"','1', '0'])
-            self.assertRaises(StopIteration, rdr.__next__)
+            self.assertRaises(StopIteration, rdr.next)
 
     unittest.main()

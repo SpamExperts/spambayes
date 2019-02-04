@@ -3,23 +3,19 @@
 Should be sub-classed to provide basic generation of able-contained HTML
 document.
 """
-from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 from ht2html import __version__
 
 import os
 import sys
 import time
 try:
-    from io import StringIO
+    from cStringIO import StringIO
 except ImportError:
-    from io import StringIO
+    from StringIO import StringIO
 
 
-class Skeleton(object):
+class Skeleton:
     #
     # for sub-classes to override
     #
@@ -195,20 +191,20 @@ class Skeleton(object):
             sys.stdout = html
             self.__do_head()
             self.__start_body()
-            print('<!-- start of page table -->')
+            print '<!-- start of page table -->'
             print ('<table width="100%" border="0"'
                    ' cellspacing="0" cellpadding="0">')
             if banner is not None:
-                print('<!-- start of banner row -->')
-                print('<tr>')
+                print '<!-- start of banner row -->'
+                print '<tr>'
                 if corner is not None:
                     self.__do_corner(corner)
-                print('<!-- start of banner -->')
-                print('<td width="%s%%" bgcolor="%s" class="banner">' % (
-                    self.get_banner_width(), self.get_lightshade()))
-                print(banner)
-                print('</td><!-- end of banner -->')
-                print('</tr><!-- end of banner row -->')
+                print '<!-- start of banner -->'
+                print '<td width="%s%%" bgcolor="%s" class="banner">' % (
+                    self.get_banner_width(), self.get_lightshade())
+                print banner
+                print '</td><!-- end of banner -->'
+                print '</tr><!-- end of banner row -->'
             # if there is a body but no sidebar, then we'll just close the
             # table right here and put the body (and any cont) in the full
             # page.  if there is a sidebar but no body, then we still create
@@ -216,19 +212,19 @@ class Skeleton(object):
             # space.  Watch out though because we don't want to close the
             # table twice
             if sidebar is None:
-                print('</table><!-- end of page table -->')
+                print '</table><!-- end of page table -->'
                 closed = 1
             else:
-                print('<tr><!-- start of sidebar/body row -->')
+                print '<tr><!-- start of sidebar/body row -->'
                 self.__do_sidebar(sidebar)
             if body is not None:
                 if closed:
-                    print(body)
+                    print body
                 else:
                     self.__do_body(body)
             if not closed:
-                print('</tr><!-- end of sidebar/body row -->')
-                print('</table><!-- end of page table -->')
+                print '</tr><!-- end of sidebar/body row -->'
+                print '</table><!-- end of page table -->'
             if cont is not None:
                 self.__do_cont(cont)
             self.__finish_all()
@@ -237,48 +233,48 @@ class Skeleton(object):
         return html.getvalue()
 
     def __do_corner(self, corner):
-        print('<!-- start of corner cells -->')
-        print('<td width="150" valign="middle" bgcolor="%s" class="corner">' \
-              % self.get_corner_bgcolor())
+        print '<!-- start of corner cells -->'
+        print '<td width="150" valign="middle" bgcolor="%s" class="corner">' \
+              % self.get_corner_bgcolor()
         # it is important not to have a newline between the corner text and
         # the table close tag, otherwise layout is messed up
         if corner is None:
-            print('&nbsp;', end=' ')
+            print '&nbsp;',
         else:
-            print(corner, end=' ')
-        print('</td>')
-        print('<td width="15" bgcolor="%s">&nbsp;&nbsp;</td><!--spacer-->' % (
-            self.get_lightshade()))
-        print('<!-- end of corner cells -->')
+            print corner,
+        print '</td>'
+        print '<td width="15" bgcolor="%s">&nbsp;&nbsp;</td><!--spacer-->' % (
+            self.get_lightshade())
+        print '<!-- end of corner cells -->'
 
     def __do_sidebar(self, sidebar):
-        print('<!-- start of sidebar cells -->')
-        print('<td width="150" valign="top" bgcolor="%s" class="sidebar">' % (
-            self.get_lightshade()))
-        print(sidebar)
-        print('</td>')
-        print('<td width="15">&nbsp;&nbsp;</td><!--spacer-->')
-        print('<!-- end of sidebar cell -->')
+        print '<!-- start of sidebar cells -->'
+        print '<td width="150" valign="top" bgcolor="%s" class="sidebar">' % (
+            self.get_lightshade())
+        print sidebar
+        print '</td>'
+        print '<td width="15">&nbsp;&nbsp;</td><!--spacer-->'
+        print '<!-- end of sidebar cell -->'
 
     def __do_body(self, body):
-        print('<!-- start of body cell -->')
-        print('<td valign="top" width="%s%%" class="body"><br>' % (
-            self.get_banner_width()))
-        print(body)
-        print('</td><!-- end of body cell -->')
+        print '<!-- start of body cell -->'
+        print '<td valign="top" width="%s%%" class="body"><br>' % (
+            self.get_banner_width())
+        print body
+        print '</td><!-- end of body cell -->'
 
     def __do_cont(self, cont):
-        print('<div class="body">')
-        print('<div class="continuation">')
-        print('<!-- start of continued wide-body text -->')
-        print(cont)
-        print('<!-- end of continued wide-body text -->')
-        print('</div>')
-        print('</div>')
+        print '<div class="body">'
+        print '<div class="continuation">'
+        print '<!-- start of continued wide-body text -->'
+        print cont
+        print '<!-- end of continued wide-body text -->'
+        print '</div>'
+        print '</div>'
 
     def __do_head(self):
         """Return the HTML <head> stuff."""
-        print('''\
+        print '''\
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
 %(xmlstyle)s<html>
 <!-- THIS PAGE IS AUTOMATICALLY GENERATED.  DO NOT EDIT. -->
@@ -303,7 +299,7 @@ Title: %(title)s
               'charset' : self.get_charset(),
               'style'   : self.__do_styles(),
               'xmlstyle': self.get_stylesheet_pi(),
-              })
+              }
 
     def __do_styles(self):
         # assemble all the style information we have to produce the
@@ -326,7 +322,7 @@ Title: %(title)s
         return s
 
     def __start_body(self):
-        print('''\
+        print '''\
 <body bgcolor="%(bgcolor)s" text="%(fgcolor)s"
       %(extraattrs)s
       link="%(linkcolor)s"  vlink="%(vlinkcolor)s"
@@ -337,10 +333,10 @@ Title: %(title)s
             'vlinkcolor': self.get_vlinkcolor(),
             'alinkcolor': self.get_alinkcolor(),
             'extraattrs': self.get_body_attributes(),
-            })
+            }
 
     def __finish_all(self):
-        print('</body></html>')
+        print '</body></html>'
 
 
 
@@ -373,4 +369,4 @@ class _Skeleton(Skeleton):
 
 if __name__ == '__main__':
     t = _Skeleton()
-    print(t.makepage())
+    print t.makepage()

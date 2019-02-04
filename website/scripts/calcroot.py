@@ -3,12 +3,11 @@
 # simple script to calculate HTROOT from ROOT_OFFSET.  Pass ROOT_OFFSET in on
 # the command line
 
-from __future__ import print_function
 import sys
 import os
 import string
 
 if sys.argv[1] == '.':
-    print('.')
+    print '.'
 else:
-    print(string.join(['..'] * len(string.split(sys.argv[1], os.sep)), os.sep))
+    print string.join(['..'] * len(string.split(sys.argv[1], os.sep)), os.sep)

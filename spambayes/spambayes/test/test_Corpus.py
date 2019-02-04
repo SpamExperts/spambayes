@@ -1,6 +1,5 @@
 # Test the Corpus module.
 
-from builtins import object
 import sys
 import time
 import unittest
@@ -134,11 +133,11 @@ class CorpusTest(unittest.TestCase):
         self.assertRaises(KeyError, self.corpus.__getitem__, 4)
 
     def test_keys(self):
-        self.assertEqual(list(self.corpus.keys()), [])
+        self.assertEqual(self.corpus.keys(), [])
         ids = [0, 1, 2]
         for id in ids:
             self.corpus.addMessage(simple_msg(id))
-        self.assertEqual(list(self.corpus.keys()), ids)
+        self.assertEqual(self.corpus.keys(), ids)
 
     def test___iter__(self):
         self.assertEqual(tuple(self.corpus), ())

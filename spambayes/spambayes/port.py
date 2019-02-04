@@ -1,5 +1,3 @@
-from future import standard_library
-standard_library.install_aliases()
 try:
     # New in Python 2.5
     from hashlib import md5
@@ -18,7 +16,7 @@ except ImportError:
         bsddb = None
 
 try:
-    import dbm.gnu
+    import gdbm
 except ImportError:
     gdbm = None
 

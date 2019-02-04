@@ -28,11 +28,8 @@ Where:
 In addition, an attempt is made to merge bayescustomize.ini into the options.
 If that exists, it can be used to change the settings in Options.options.
 """
-from __future__ import print_function
-from __future__ import generators
 
-from builtins import range
-from builtins import object
+from __future__ import generators
 
 import sys,os
 
@@ -46,16 +43,16 @@ debug = 0
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__ % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__ % globals()
     sys.exit(code)
 
 DONT_TRAIN = None
 TRAIN_AS_HAM = 1
 TRAIN_AS_SPAM = 2
 
-class TrainDecision(object):
+class TrainDecision:
     def __call__(self,scr,is_spam):
         if is_spam:
             return self.spamtrain(scr)
@@ -118,10 +115,10 @@ decisions={'all': All,
            'owndecision': OwnDecision,
            'owndecision+fn': OwnDecisionFNCorrection,
           }
-decisionkeys=list(decisions.keys())
+decisionkeys=decisions.keys()
 decisionkeys.sort()
 
-class FirstN(object):
+class FirstN:
     def __init__(self,n,client):
         self.client = client
         self.x = 0
@@ -140,7 +137,7 @@ class FirstN(object):
     def tooearly(self):
         return self.x < self.n
 
-class Updater(object):
+class Updater:
     def __init__(self,d=None):
         self.setd(d)
 
@@ -148,7 +145,7 @@ class Updater(object):
         self.d=d
 
 def drive(nsets,decision):
-    print(options.display())
+    print options.display()
 
     spamdirs = [get_pathname_option("TestDriver", "spam_directories") % \
                 i for i in range(1, nsets+1)]
@@ -171,22 +168,22 @@ def drive(nsets,decision):
     hamtrain = 0
     spamtrain = 0
     n = 0
-    for dir,name, is_spam in allfns.keys():
+    for dir,name, is_spam in allfns.iterkeys():
         n += 1
         m=msgs.Msg(dir, name).guts
         if debug > 1:
-            print("trained:%dH+%dS"%(hamtrain,spamtrain))
+            print "trained:%dH+%dS"%(hamtrain,spamtrain)
         scr=d.score(m)
         if debug > 1:
-            print("score:%.3f"%scr)
+            print "score:%.3f"%scr
         if not decision.tooearly():
             if is_spam:
                 if debug > 0:
-                    print("Spam with score %.2f"%scr)
+                    print "Spam with score %.2f"%scr
                 cc.spam(scr)
             else:
                 if debug > 0:
-                    print("Ham with score %.2f"%scr)
+                    print "Ham with score %.2f"%scr
                 cc.ham(scr)
         de = decision(scr,is_spam)
         if de == TRAIN_AS_SPAM:
@@ -196,13 +193,13 @@ def drive(nsets,decision):
             d.train_ham(m)
             hamtrain += 1
         if n % 100 == 0:
-            print("%5d trained:%dH+%dS wrds:%d"%(
-                n, hamtrain, spamtrain, len(d.bayes.wordinfo)))
-            print(cc)
-    print("="*70)
-    print("%5d trained:%dH+%dS wrds:%d"%(
-        n, hamtrain, spamtrain, len(d.bayes.wordinfo)))
-    print(cc)
+            print "%5d trained:%dH+%dS wrds:%d"%(
+                n, hamtrain, spamtrain, len(d.bayes.wordinfo))
+            print cc
+    print "="*70
+    print "%5d trained:%dH+%dS wrds:%d"%(
+        n, hamtrain, spamtrain, len(d.bayes.wordinfo))
+    print cc
 
 def main():
     global debug
@@ -211,7 +208,7 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'vd:hn:m:')
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(1, msg)
 
     nsets = None
@@ -228,7 +225,7 @@ def main():
         elif opt == '-m':
             m = int(arg)
         elif opt == '-d':
-            if arg not in decisions:
+            if not decisions.has_key(arg):
                 usage(1,'Unknown decisionmaker')
             decision = decisions[arg]
 

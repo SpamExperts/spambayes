@@ -1,5 +1,3 @@
-from __future__ import print_function
-from __future__ import absolute_import
 # Control Processors for our wizard
 
 # This module is part of the spambayes project, which is Copyright 2003
@@ -9,9 +7,9 @@ from __future__ import absolute_import
 import win32gui, win32con, win32api, commctrl
 from dialogs import ShowDialog, MakePropertyPage
 
-from . import processors
-from . import opt_processors
-from . import async_processor
+import processors
+import opt_processors
+import async_processor
 
 import timer
 
@@ -96,7 +94,7 @@ class WizardButtonProcessor(processors.ButtonProcessor):
             #backward
             assert self.page_stack, "Back should be disabled when no back stack"
             pageNo = self.page_stack.pop()
-            print("Back button switching to page", pageNo)
+            print "Back button switching to page", pageNo
             self.switchToPage(pageNo)
 
     def switchToPage(self, index):
@@ -105,7 +103,7 @@ class WizardButtonProcessor(processors.ButtonProcessor):
                 return 1
             win32gui.DestroyWindow(self.currentPageHwnd)
         #template = self.window.manager.dialog_parser.dialogs[self.page_ids[index]]
-        from . import dlgcore
+        import dlgcore
         self.currentPage = MakePropertyPage(self.page_placeholder_hwnd,
                                             self.window.manager,
                                             self.window.config,
@@ -168,7 +166,7 @@ class ConfigureWizardProcessor(WizardButtonProcessor):
         index = self.currentPageIndex
         id = self.page_ids[index]
         config = self.window.config
-        print("GetNextPage with current", index, id)
+        print "GetNextPage with current", index, id
         if id == 'IDD_WIZARD_WELCOME':
             # Welcome page
             if config.wizard.preparation == 0: # unprepared

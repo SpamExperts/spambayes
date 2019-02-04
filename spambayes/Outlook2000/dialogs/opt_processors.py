@@ -1,6 +1,3 @@
-from __future__ import division
-from __future__ import print_function
-from __future__ import absolute_import
 # Option Control Processors for our dialog.
 # These are extensions to basic Control Processors that are linked with
 # SpamBayes options.
@@ -9,15 +6,12 @@ from __future__ import absolute_import
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
-from builtins import str
-from builtins import zip
-from past.utils import old_div
 import win32gui, win32api, win32con
 import commctrl
 import struct, array
-from .dlgutils import *
+from dlgutils import *
 
-from . import processors
+import processors
 
 verbose = 0 # set to 1 to see option values fetched and set.
 
@@ -54,8 +48,8 @@ class OptionControlProcessor(processors.ControlProcessor):
         if option is None:
             option = self.option
         if verbose:
-            print("Setting option '%s' (%s) -> %s" % \
-                  (option.display_name(), option.name, value))
+            print "Setting option '%s' (%s) -> %s" % \
+                  (option.display_name(), option.name, value)
         option.set(value)
         self.NotifyOptionChanged(option)
     def GetOptionValue(self, option = None):
@@ -63,8 +57,8 @@ class OptionControlProcessor(processors.ControlProcessor):
             option = self.option
         ret = option.get()
         if verbose:
-            print("Got option '%s' (%s) -> %s" % \
-                  (option.display_name(), option.name, ret))
+            print "Got option '%s' (%s) -> %s" % \
+                  (option.display_name(), option.name, ret)
         return ret
 
     # Only sub-classes know how to update their controls from the value.
@@ -140,10 +134,10 @@ class ComboProcessor(OptionControlProcessor):
         OptionControlProcessor.__init__(self, window, control_ids, option)
         if text:
             temp = text.split(",")
-            self.option_to_text = list(zip(self.option.valid_input(), temp))
-            self.text_to_option = dict(list(zip(temp, self.option.valid_input())))
+            self.option_to_text = zip(self.option.valid_input(), temp)
+            self.text_to_option = dict(zip(temp, self.option.valid_input()))
         else:
-            self.option_to_text = list(zip(self.option.valid_input(),self.option.valid_input()))
+            self.option_to_text = zip(self.option.valid_input(),self.option.valid_input())
             self.text_to_option = dict(self.option_to_text)
 
     def OnCommand(self, wparam, lparam):
@@ -222,8 +216,8 @@ class EditNumberProcessor(OptionControlProcessor):
         win32gui.SendMessage(slider, commctrl.TBM_SETRANGE, 0, MAKELONG(0, self.ticks))
         # sigh - these values may not be right
         win32gui.SendMessage(slider, commctrl.TBM_SETLINESIZE, 0, 1)
-        win32gui.SendMessage(slider, commctrl.TBM_SETPAGESIZE, 0, old_div(self.ticks,20))
-        win32gui.SendMessage(slider, commctrl.TBM_SETTICFREQ, old_div(self.ticks,10), 0)
+        win32gui.SendMessage(slider, commctrl.TBM_SETPAGESIZE, 0, self.ticks/20)
+        win32gui.SendMessage(slider, commctrl.TBM_SETTICFREQ, self.ticks/10, 0)
 
     def UpdateControl_FromValue(self):
         win32gui.SendMessage(self.GetControl(), win32con.WM_SETTEXT, 0,
@@ -240,7 +234,7 @@ class EditNumberProcessor(OptionControlProcessor):
             # then convert to int as the slider only works with ints
             val = float(self.GetOptionValue())
             # Convert it to our range.
-            val *= old_div(float(self.ticks), self.max_val)
+            val *= float(self.ticks) / self.max_val
             val = int(val)
         except ValueError:
             return
@@ -254,7 +248,7 @@ class EditNumberProcessor(OptionControlProcessor):
         str_val = buf[:nchars]
         val = float(str_val)
         if val < self.min_val or val > self.max_edit_val:
-            raise ValueError("Value must be between %d and %d" % (self.min_val, self.max_val))
+            raise ValueError, "Value must be between %d and %d" % (self.min_val, self.max_val)
         self.SetOptionValue(val)
 
 class FilenameProcessor(OptionControlProcessor):
@@ -269,7 +263,7 @@ class FilenameProcessor(OptionControlProcessor):
         return OptionControlProcessor.GetPopupHelpText(self, id)
 
     def DoBrowse(self):
-        from .win32struct import OPENFILENAME
+        from win32struct import OPENFILENAME
         ofn = OPENFILENAME(512)
         ofn.hwndOwner = self.window.hwnd
         ofn.setFilter(self.file_filter)

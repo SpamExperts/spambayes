@@ -23,13 +23,11 @@ dbm to ZODB on linux or OS X, the following should work:
 
     python convert_db.py -n ~/.hammie.db
 """
-from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
-from builtins import str
 __author__ = "Tony Meyer <ta-meyer@ihug.co.nz>"
 __credits__ = "Tim Stone; all the SpamBayes folk"
 
@@ -42,14 +40,14 @@ from spambayes import storage
 if __name__ == '__main__':
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'ht:T:n:N:')
-    except getopt.error as msg:
-        print(str(msg) + '\n\n' + __doc__, file=sys.stderr)
+    except getopt.error, msg:
+        print >> sys.stderr, str(msg) + '\n\n' + __doc__
         sys.exit()
 
     old_name = old_type = new_name = new_type = None
     for opt, arg in opts:
         if opt == '-h':
-            print(__doc__, file=sys.stderr)
+            print >> sys.stderr, __doc__
             sys.exit()
         elif opt == '-t':
             old_type = arg

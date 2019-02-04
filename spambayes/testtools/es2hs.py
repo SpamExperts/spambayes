@@ -16,7 +16,6 @@ Where OPTIONS is one or more of:
         of messages in the everything folder.  Can be specified more
         than once.
 """
-from __future__ import print_function
 
 import getopt
 import sys
@@ -36,9 +35,9 @@ spamdir = "Data/Spam/reservoir"
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__ % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__ % globals()
     sys.exit(code)
 
 def main():
@@ -49,7 +48,7 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hs:e:')
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(2, msg)
 
     if opts:
@@ -71,7 +70,7 @@ def main():
 
     for s in spam:
         if loud:
-            print("Scanning spamdir (%s):" % s)
+            print "Scanning spamdir (%s):" % s
         files = os.listdir(s)
         for f in files:
             if f[0] in ('1', '2', '3', '4', '5', '6', '7', '8', '9'):
@@ -86,7 +85,7 @@ def main():
     os.makedirs(hamdir)
 
     if loud:
-        print("Scanning everything")
+        print "Scanning everything"
     for f in os.listdir(everything):
         if f[0] in ('1', '2', '3', '4', '5', '6', '7', '8', '9'):
             name = os.path.join(everything, f)

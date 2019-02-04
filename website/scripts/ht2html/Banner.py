@@ -1,17 +1,13 @@
 """Generate a site links table for use in a banner.
 """
-from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 import sys
 try:
-    from io import StringIO
+    from cStringIO import StringIO
 except IOError:
-    from io import StringIO
+    from StringIO import StringIO
 
-class Banner(object):
+class Banner:
     def __init__(self, links, cols=4):
         """Initialize the Banner instance.
 
@@ -42,16 +38,16 @@ class Banner(object):
         return html.getvalue()
 
     def __start_table(self):
-        print('<!-- start of site links table -->')
-        print('<table width="100%" border="0"')
-        print(self.get_banner_attributes())
-        print('       bgcolor="%s">' % (
-            self.get_bgcolor()))
-        print('<tr>')
+        print '<!-- start of site links table -->'
+        print '<table width="100%" border="0"'
+        print self.get_banner_attributes()
+        print '       bgcolor="%s">' % (
+            self.get_bgcolor())
+        print '<tr>'
 
     def __end_table(self):
-        print('</tr>')
-        print('</table><!-- end of site links table -->')
+        print '</tr>'
+        print '</table><!-- end of site links table -->'
 
     def __do_table(self):
         col = 0
@@ -67,16 +63,16 @@ class Banner(object):
                 s = '<a href="%s">%s</a>%s' % (url, text, extra)
             if col >= self.__cols:
                 # break the row
-                print('</tr><tr>')
+                print '</tr><tr>'
                 col = 0
-            print('    <td bgcolor="%s">' % self.get_lightshade())
-            print(s)
-            print('    </td>')
+            print '    <td bgcolor="%s">' % self.get_lightshade()
+            print s
+            print '    </td>'
             col = col + 1
         # fill rest of row with non-breaking spaces.
         while col and col < self.__cols:
-            print('    <td bgcolor="%s">' % self.get_lightshade())
-            print('&nbsp;&nbsp;</td>')
+            print '    <td bgcolor="%s">' % self.get_lightshade()
+            print '&nbsp;&nbsp;</td>'
             col = col + 1
 
 
@@ -97,4 +93,4 @@ if __name__ == '__main__':
                  (None,         '<b>Fifth Page</b>'),
                  ('page6.html', 'Sixth Page'),
                  ])
-    print(t.makepage())
+    print t.makepage()

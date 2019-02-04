@@ -14,7 +14,6 @@ usage %(prog)s [ options ] token ...
 """
 
 from __future__ import division
-from __future__ import print_function
 
 import sys
 import getopt
@@ -30,8 +29,8 @@ prog = sys.argv[0]
 
 def usage(msg=None):
     if msg is not None:
-        print(msg, file=sys.stderr)
-    print(__doc__.strip() % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+    print >> sys.stderr, __doc__.strip() % globals()
 
 def print_spamcounts(tokens, db, use_re):
     if use_re:
@@ -63,7 +62,7 @@ def main(args):
     try:
         opts, args = getopt.getopt(args, "hrto:",
                                    ["help", "re", "tokenize", "option="])
-    except getopt.GetoptError as msg:
+    except getopt.GetoptError, msg:
         usage(msg)
         return 1
 

@@ -1,5 +1,4 @@
 from __future__ import generators
-from __future__ import print_function
 # Dump every property we can find for a MAPI item
 
 import pythoncom
@@ -23,7 +22,7 @@ def FindDupeProps(driver, mapi_folder, prop_tag, dupe_dict):
             props = ( (mapi.PS_PUBLIC_STRINGS, prop_tag), )
             ids = mapi_folder.GetIDsFromNames(props, 0)
             if PROP_ID(ids[0])==0:
-                print("Could not resolve property '%s'" % prop_tag)
+                print "Could not resolve property '%s'" % prop_tag
                 return 1
             prop_tag = PROP_TAG( PT_UNSPECIFIED, PROP_ID(ids[0]))
 
@@ -38,15 +37,15 @@ def FindDupeProps(driver, mapi_folder, prop_tag, dupe_dict):
             num_with_prop += 1
         else:
             num_without_prop += 1
-    print("Folder '%s': %d items with the property and %d items without it" \
-            % (name, num_with_prop, num_without_prop))
+    print "Folder '%s': %d items with the property and %d items without it" \
+            % (name, num_with_prop, num_without_prop)
 
 def DumpDupes(dupe_dict):
-    for val, items in list(dupe_dict.items()):
+    for val, items in dupe_dict.items():
         if len(items)>1:
-            print("Found %d items with property value %r" % (len(items), val))
+            print "Found %d items with property value %r" % (len(items), val)
             for (eid, subject) in items:
-                print("", subject)
+                print "", subject
 
 def usage(driver):
     folder_doc = driver.GetFolderNameDoc()
@@ -61,7 +60,7 @@ matching is substring and ignore-case.
 %s
 Use the -n option to see all top-level folder names from all stores.""" \
     % (os.path.basename(sys.argv[0]),folder_doc)
-    print(msg)
+    print msg
 
 def main():
     driver = mapi_driver.MAPIDriver()
@@ -69,9 +68,9 @@ def main():
     import getopt
     try:
         opts, args = getopt.getopt(sys.argv[1:], "f:n")
-    except getopt.error as e:
-        print(e)
-        print()
+    except getopt.error, e:
+        print e
+        print
         usage(driver)
         sys.exit(1)
     folder_names = []
@@ -83,15 +82,15 @@ def main():
             driver.DumpTopLevelFolders()
             sys.exit(1)
         else:
-            print("Invalid arg")
+            print "Invalid arg"
             return
 
     if not folder_names:
         folder_names = ["Inbox"] # Assume this exists!
 
     if len(args) != 1:
-        print("You must specify a property tag/name")
-        print()
+        print "You must specify a property tag/name"
+        print
         usage(driver)
         sys.exit(1)
 
@@ -99,8 +98,8 @@ def main():
     for folder_name in folder_names:
         try:
             folder = driver.FindFolder(folder_name)
-        except ValueError as details:
-            print(details)
+        except ValueError, details:
+            print details
             sys.exit(1)
 
         FindDupeProps(driver, folder, args[0], dupe_dict)

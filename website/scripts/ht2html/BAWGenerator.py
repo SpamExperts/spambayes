@@ -1,7 +1,6 @@
 """Generates Barry Warsaw's style.
 """
 
-from builtins import range
 import os
 import time
 

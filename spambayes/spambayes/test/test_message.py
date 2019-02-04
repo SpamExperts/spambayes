@@ -1,7 +1,5 @@
-from __future__ import print_function
 # Test spambayes.message module.
 
-from builtins import str
 import os
 import sys
 import math
@@ -34,9 +32,9 @@ TEMP_DBM_NAME = os.path.join(os.path.dirname(__file__), "temp.dbm")
 # be ours.
 for fn in [TEMP_PICKLE_NAME, TEMP_DBM_NAME]:
     if os.path.exists(fn):
-        print(fn, "already exists.  Please remove this file before " \
+        print fn, "already exists.  Please remove this file before " \
               "running these tests (a file by that name will be " \
-              "created and destroyed as part of the tests).")
+              "created and destroyed as part of the tests)."
         sys.exit(1)
 
 class MessageTest(unittest.TestCase):
@@ -434,7 +432,7 @@ class SBHeaderMessageTest(unittest.TestCase):
                    options['Headers', 'score_header_name'] : '6',
                    options['Headers', 'trained_header_name'] : '7',
                    }
-        for name, val in list(headers.items()):
+        for name, val in headers.items():
             self.msg[name] = val
         sbheaders = self.msg.currentSBHeaders()
         self.assertEqual(headers, sbheaders)
@@ -451,10 +449,10 @@ class SBHeaderMessageTest(unittest.TestCase):
         for header in headers:
             self.msg[header] = "test"
         for header in headers:
-            self.assert_(header in list(self.msg.keys()))
+            self.assert_(header in self.msg.keys())
         self.msg.delSBHeaders()
         for header in headers:
-            self.assert_(header not in list(self.msg.keys()))
+            self.assert_(header not in self.msg.keys())
 
     def test_delNotations(self):
         # Add each type of notation to each header and check that it
@@ -605,22 +603,22 @@ class MessageInfoBaseTest(unittest.TestCase):
         data = {"1" : ('a', 'b', 'c'),
                 "2" : ('d', 'e', 'f'),
                 "3" : "test"}
-        for k, v in list(data.items()):
+        for k, v in data.items():
             self.db.db[k] = v
         self.db.store()
         fn = self.db.db_name
         self.db.close()
         db2 = self.klass(fn, self.mode)
         try:
-            self.assertEqual(len(list(db2.db.keys())), len(list(data.keys())))
-            for k, v in list(data.items()):
+            self.assertEqual(len(db2.db.keys()), len(data.keys()))
+            for k, v in data.items():
                 self.assertEqual(db2.db[k], v)
         finally:
             db2.close()
 
     def test_load_new(self):
         # Load from a non-existing db (i.e. create new).
-        self.assertEqual(list(self.db.db.keys()), [])
+        self.assertEqual(self.db.db.keys(), [])
 
 
 class MessageInfoPickleTest(MessageInfoBaseTest):
@@ -739,7 +737,7 @@ def suite():
     try:
         dbmstorage.open_best()
     except dbmstorage.error:
-        print("Skipping MessageInfoDBTest - no dbm module available")
+        print "Skipping MessageInfoDBTest - no dbm module available"
         from spambayes import message
         def always_pickle():
             return "__test.pik", "pickle"

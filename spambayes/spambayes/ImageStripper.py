@@ -3,20 +3,16 @@ This is the place where we try and discover information buried in images.
 """
 
 from __future__ import division
-from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
 import sys
 import os
 import tempfile
 import math
 import atexit
 try:
-    import io as StringIO
+    import cStringIO as StringIO
 except ImportError:
-    import io
+    import StringIO
 
 try:
     from PIL import Image, ImageSequence
@@ -48,9 +44,9 @@ def is_executable(prog):
     if sys.platform == "win32":
         return True
     info = os.stat(prog)
-    return (info.st_uid == os.getuid() and (info.st_mode & 0o100) or
-            info.st_gid == os.getgid() and (info.st_mode & 0o010) or
-            info.st_mode & 0o001)
+    return (info.st_uid == os.getuid() and (info.st_mode & 0100) or
+            info.st_gid == os.getgid() and (info.st_mode & 0010) or
+            info.st_mode & 0001)
 
 def find_program(prog):
     path = os.environ.get("PATH", "").split(os.pathsep)
@@ -129,7 +125,7 @@ def PIL_decode_parts(parts):
         # what garbage they will call a GIF image to entice you to open
         # it?
         try:
-            image = Image.open(io.StringIO(bytes))
+            image = Image.open(StringIO.StringIO(bytes))
             image.load()
         except:
             # Any error whatsoever is reason for not looking further at
@@ -234,7 +230,7 @@ class OCRExecutableEngine(OCREngine):
     program = property(get_program)
 
     def get_command_line(self, pnmfile):
-        raise NotImplementedError("base classes must override")
+        raise NotImplementedError, "base classes must override"
 
     def extract_text(self, pnmfile):
         # Generically reads output from stdout.
@@ -244,7 +240,7 @@ class OCRExecutableEngine(OCREngine):
         ret = ocr.read()
         exit_code = ocr.close()
         if exit_code:
-            raise SystemError("%s failed with exit code %s" %
+            raise SystemError, ("%s failed with exit code %s" %
                                 (self.engine_name, exit_code))
         return ret
 
@@ -287,7 +283,7 @@ def get_engine(engine_name):
             return engine
     return None
 
-class ImageStripper(object):
+class ImageStripper:
     def __init__(self, cachefile=""):
         self.cachefile = os.path.expanduser(cachefile)
         if os.path.exists(self.cachefile):
@@ -314,8 +310,8 @@ class ImageStripper(object):
                 if self.engine.program:
                     try:
                         ctext = self.engine.extract_text(pnmfile).lower()
-                    except SystemError as msg:
-                        print(msg, file=sys.stderr)
+                    except SystemError, msg:
+                        print >> sys.stderr, msg
                         preserve = True
                         ctext = ""
                 else:
@@ -323,8 +319,9 @@ class ImageStripper(object):
                     # is enabled and we have no program, its OK to spew lots
                     # of warnings - they should either disable OCR (it is by
                     # default), or fix their config.
-                    print("No OCR program '%s' available - can't get text!" \
-                          % (self.engine.engine_name,), file=sys.stderr)
+                    print >> sys.stderr, \
+                          "No OCR program '%s' available - can't get text!" \
+                          % (self.engine.engine_name,)
                     ctext = ""
                 ctokens = set()
                 if not ctext.strip():
@@ -353,8 +350,8 @@ class ImageStripper(object):
             self.engine = get_engine(engine_name)
         if self.engine is None:
             # We only get here if explicitly enabled - spewing msgs is ok.
-            print("invalid engine name '%s' - OCR disabled" \
-                                 % (engine_name,), file=sys.stderr)
+            print >> sys.stderr, "invalid engine name '%s' - OCR disabled" \
+                                 % (engine_name,)
             return "", set()
 
         if not parts:
@@ -374,12 +371,12 @@ class ImageStripper(object):
 
     def close(self):
         if options["globals", "verbose"]:
-            print("saving", len(self.cache), end=' ', file=sys.stderr)
-            print("items to", self.cachefile, end=' ', file=sys.stderr)
+            print >> sys.stderr, "saving", len(self.cache),
+            print >> sys.stderr, "items to", self.cachefile,
             if self.hits + self.misses:
-                print("%.2f%% hit rate" % \
-                      (100 * self.hits / (self.hits + self.misses)), end=' ', file=sys.stderr)
-            print(file=sys.stderr)
+                print >> sys.stderr, "%.2f%% hit rate" % \
+                      (100 * self.hits / (self.hits + self.misses)),
+            print >> sys.stderr
         pickle_write(self.cachefile, self.cache)
 
 _cachefile = options["Tokenizer", "crack_image_cache"]

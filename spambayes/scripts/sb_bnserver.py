@@ -26,12 +26,8 @@ Where:
     FILE
         unix domain socket used on which we listen    
 """
-from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import range
-import os, getopt, sys, socketserver, traceback, select, socket, errno
+import os, getopt, sys, SocketServer, traceback, select, socket, errno
 
 # See Options.py for explanations of these properties
 program = sys.argv[0]
@@ -40,9 +36,9 @@ program = sys.argv[0]
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__, file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__
     sys.exit(code)
 
 
@@ -50,7 +46,7 @@ def main():
     """Main program; parse options and go."""
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hd:p:o:a:A:')
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(2, msg)
 
     if len(args) != 1:
@@ -60,7 +56,7 @@ def main():
     # we haven't wasted time if we later find we can't start the server
     try:
         server = BNServer(args[0], BNRequest)
-    except socket.error as e:
+    except socket.error,e:
         if e[0] == errno.EADDRINUSE:
             pass   # in use, no need
         else:
@@ -93,7 +89,7 @@ def main():
 class NowIdle(Exception):
     pass
         
-class BNServer(socketserver.UnixStreamServer):
+class BNServer(SocketServer.UnixStreamServer):
     allow_reuse_address = True
     timeout = 10.0
     number = 100
@@ -112,7 +108,7 @@ class BNServer(socketserver.UnixStreamServer):
         else:
             raise NowIdle()
         
-class BNRequest(socketserver.StreamRequestHandler):
+class BNRequest(SocketServer.StreamRequestHandler):
     def handle(self):
         switches = self.rfile.readline()
         body = self.rfile.read()

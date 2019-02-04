@@ -1,6 +1,5 @@
 # Test spambayes.Stats module.
 
-from builtins import range
 import os
 import sys
 import time
@@ -265,7 +264,7 @@ class StatsTest(unittest.TestCase):
                          data["total_cost"])
 
     def test_AddPercentStrings(self):
-        for i in range(10):
+        for i in xrange(10):
             self._test_AddPercentStrings(i)
 
     def _test_AddPercentStrings(self, dp):

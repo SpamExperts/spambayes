@@ -22,13 +22,9 @@ Options:
     -t, --train=  - train the message (pass either 'ham' or 'spam')
     -o, --option= - set [section, option] in the options database to value
 """
-from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import str
 import sys
-import http.client
+import httplib
 import mimetypes
 import getopt
 import random
@@ -50,7 +46,7 @@ def post_multipart(host, selector, fields, files):
     as files.  Return the server's response page.
     """
     content_type, body = encode_multipart_formdata(fields, files)
-    h = http.client.HTTP(host)
+    h = httplib.HTTP(host)
     h.putrequest('POST', selector)
     h.putheader('content-type', content_type)
     h.putheader('content-length', str(len(body)))
@@ -93,7 +89,7 @@ def usage(*args):
     defaults = {}
     for d in args:
         defaults.update(d)
-    print(__doc__ % defaults)
+    print __doc__ % defaults
 
 def main(argv):
     null = False

@@ -25,16 +25,12 @@ shouldn't be expecting to see the number of bytes.
 
 POP3 is documented in RFC 1939.
 """
-from __future__ import print_function
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import object
-import socketserver
+import SocketServer
 try:
-    import io as StringIO
+    import cStringIO as StringIO
 except ImportError:
-    import io
+    import StringIO
 
 import email
 import re
@@ -53,17 +49,17 @@ HEADER_SIZE = len(HEADER % 0.0)
 
 VERSION = 0.1
 
-class POP3ProxyServer(socketserver.ThreadingTCPServer):
+class POP3ProxyServer(SocketServer.ThreadingTCPServer):
 
     allow_reuse_address = True
 
     def __init__(self, addr, handler, classifier, log, zodb):
-        socketserver.ThreadingTCPServer.__init__(self, addr, handler)
+        SocketServer.ThreadingTCPServer.__init__(self, addr, handler)
         self.classifier = classifier
         self.log = log
         self.zodb = zodb
 
-class LogWrapper(object):
+class LogWrapper:
 
     def __init__(self, log, file):
         self.log = log
@@ -81,7 +77,7 @@ class LogWrapper(object):
     def close(self):
         self.file.close()
 
-class POP3RequestHandler(socketserver.StreamRequestHandler):
+class POP3RequestHandler(SocketServer.StreamRequestHandler):
     """Act as proxy between POP client and server."""
 
     def read_user(self):
@@ -186,7 +182,7 @@ class POP3RequestHandler(socketserver.StreamRequestHandler):
                  % (cmd, multiline, firstline.strip()))
         if multiline:
             # Collect the entire response as one string
-            resp = io.StringIO()
+            resp = StringIO.StringIO()
             while 1:
                 line = self.pop_rfile.readline()
                 resp.write(line)
@@ -217,7 +213,7 @@ class POP3RequestHandler(socketserver.StreamRequestHandler):
             return firstline, resp
         try:
             msg = email.message_from_string(resp)
-        except email.Errors.MessageParseError as err:
+        except email.Errors.MessageParseError, err:
             zLOG.LOG("POP3", zLOG.WARNING,
                      "Failed to parse msg: %s" % err, error=sys.exc_info())
             resp = self.message_parse_error(resp)
@@ -304,7 +300,7 @@ def main():
     profile = r["profile"]
 
     log = open("pop.log", "ab")
-    print("+PROXY start", time.ctime(), file=log)
+    print >> log, "+PROXY start", time.ctime()
 
     server = POP3ProxyServer(('', int(options["pop3proxy",
                                               "listen_ports"][0])),

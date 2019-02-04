@@ -1,7 +1,6 @@
 """Generates the ht2html documentation style
 """
 
-from builtins import range
 import os
 import time
 

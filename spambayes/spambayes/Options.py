@@ -16,7 +16,6 @@ shared instance.
 To Do:
  o Suggestions?
 """
-from __future__ import print_function
 
 import sys, os
 
@@ -1361,11 +1360,11 @@ def load_options():
                 # in the current directory, and no win32 extensions installed
                 # to locate the "user" directory - seeing things are so lamely
                 # setup, it is worth printing a warning
-                print("NOTE: We can not locate an INI file " \
+                print >> sys.stderr, "NOTE: We can not locate an INI file " \
                       "for SpamBayes, and the Python for Windows extensions " \
                       "are not installed, meaning we can't locate your " \
                       "'user' directory.  An empty configuration file at " \
-                      "'%s' will be used." % optionsPathname.encode('mbcs'), file=sys.stderr)
+                      "'%s' will be used." % optionsPathname.encode('mbcs')
             else:
                 windowsUserDirectory = os.path.join(
                         shell.SHGetFolderPath(0,shellcon.CSIDL_APPDATA,0,0),

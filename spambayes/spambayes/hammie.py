@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 
-from builtins import object
 import math
 
 from spambayes import mboxutils
@@ -8,7 +7,7 @@ from spambayes import storage
 from spambayes.Options import options
 from spambayes.tokenizer import tokenize
 
-class Hammie(object):
+class Hammie:
     """A spambayes mail filter.
 
     This implements the basic functionality needed to score, filter, or

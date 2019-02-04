@@ -32,17 +32,13 @@ Existing regimes are:
                   example, a user who deletes all mail classified as spam
                   without ever examining it for false positives.
 """
-from __future__ import division
-from __future__ import print_function
 
 ###
 ### This is a training regime for the incremental.py harness.
 ### It does perfect training on all messages.
 ###
 
-from past.utils import old_div
-from builtins import object
-class perfect(object):
+class perfect:
     def __init__(self):
         pass
 
@@ -58,7 +54,7 @@ class perfect(object):
 ### correction to perfect at the end of each group.
 ###
 
-class corrected(object):
+class corrected:
     def __init__(self):
         self.spam_to_ham = []
         self.ham_to_spam = []
@@ -107,11 +103,11 @@ class balanced_corrected(corrected):
                 test.nspam_trained == 0):
             # Otherwise, we only train if it doesn't screw up the
             # balance.
-            ratio = old_div(test.nham_trained, float(test.nspam_trained))
+            ratio = test.nham_trained / float(test.nspam_trained)
             if ratio > self.ratio_maximum and guess[0] == 1:
                 # Too much ham, and this is ham - don't train.
                 return 0
-            elif ratio < (old_div(1,self.ratio_maximum)) and guess[0] == -1:
+            elif ratio < (1/self.ratio_maximum) and guess[0] == -1:
                 # Too much spam, and this is spam - don't train.
                 return 0
         return corrected.guess_action(self, which, test, guess, actual, msg)
@@ -121,7 +117,7 @@ class balanced_corrected(corrected):
 ### It does perfect training for fp, fn, and unsures.
 ###
 
-class fpfnunsure(object):
+class fpfnunsure:
     def __init__(self):
         pass
 
@@ -138,7 +134,7 @@ class fpfnunsure(object):
 ### false positives broken.
 ###
 
-class fnunsure(object):
+class fnunsure:
     def __init__(self):
         pass
 
@@ -156,7 +152,7 @@ class fnunsure(object):
 ### properly classified with extreme confidence.
 ###
 
-class nonedge(object):
+class nonedge:
     def __init__(self):
         pass
 
@@ -177,7 +173,7 @@ class nonedge(object):
 ### untraining after 120 groups have gone by.
 ###
 
-class expire4months(object):
+class expire4months:
     def __init__(self):
         self.ham = [[]]
         self.spam = [[]]
@@ -198,4 +194,4 @@ class expire4months(object):
         return actual
 
 if __name__ == "__main__":
-    print(__doc__)
+    print __doc__

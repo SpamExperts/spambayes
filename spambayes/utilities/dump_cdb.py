@@ -1,7 +1,6 @@
 #! /usr/bin/env python
 
 
-from __future__ import print_function
 RC_DIR = "~/.spambayes"
 DB_FILE = RC_DIR + "/wordprobs.cdb"
 
@@ -20,12 +19,12 @@ def main():
         db_file = os.path.expanduser(DB_FILE)
     db = Cdb(open(db_file, 'rb'))
     items = []
-    for k, v in db.items():
+    for k, v in db.iteritems():
         items.append((float(v), k))
 
     items.sort()
     for v, k in items:
-        print(k, v)
+        print k, v
 
 if __name__ == "__main__":
     main()

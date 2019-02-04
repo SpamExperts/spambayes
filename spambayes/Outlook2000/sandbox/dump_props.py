@@ -1,5 +1,4 @@
 from __future__ import generators
-from __future__ import print_function
 # Dump every property we can find for a MAPI item
 
 import pythoncom
@@ -87,8 +86,8 @@ def DumpItemProps(item, shorten, get_large_props, stream=None):
             continue
         prop_repr = FormatPropertyValue(prop_tag, prop_val, item,
                                         shorten, get_large_props)
-        print("%-20s: %s" % (prop_name, prop_repr), file=stream)
-    print("-- end of item properties --", file=stream)
+        print >> stream, "%-20s: %s" % (prop_name, prop_repr)
+    print >> stream, "-- end of item properties --"
 
 def DumpProps(driver, mapi_folder, subject, include_attach, shorten,
               get_large, stream=None):
@@ -97,26 +96,28 @@ def DumpProps(driver, mapi_folder, subject, include_attach, shorten,
     for item in driver.GetItemsWithValue(mapi_folder, PR_SUBJECT_A, subject):
         DumpItemProps(item, shorten, get_large, stream)
         if include_attach:
-            print(file=stream)
+            print >> stream
             table = item.GetAttachmentTable(0)
             rows = mapi.HrQueryAllRows(table, (PR_ATTACH_NUM,), None, None, 0)
             for row in rows:
                 attach_num = row[0][1]
-                print("Dumping attachment (PR_ATTACH_NUM=%d)" % (attach_num,), file=stream)
+                print >> stream, \
+                      "Dumping attachment (PR_ATTACH_NUM=%d)" % (attach_num,)
                 attach = item.OpenAttach(attach_num, None,
                                          mapi.MAPI_DEFERRED_ERRORS)
                 DumpItemProps(attach, shorten, get_large, stream)
-            print(file=stream)
-        print(file=stream)
+            print >> stream
+        print >> stream
 
 # Generic table dumper.
 def DumpTable(driver, table, name_query_ob, shorten, large_props, stream=None):
     cols = table.QueryColumns(TBL_ALL_COLUMNS)
     table.SetColumns(cols, 0)
     rows = mapi.HrQueryAllRows(table, cols, None, None, 0)
-    print("Table has %d rows, each with %d columns" % (len(rows), len(cols)), file=stream)
+    print >> stream, \
+          "Table has %d rows, each with %d columns" % (len(rows), len(cols))
     for row in rows:
-        print("-- new row --", file=stream)
+        print >> stream, "-- new row --"
         for col in row:
             prop_tag, prop_val = col
             # If we want 'short' variables, drop 'not found' props.
@@ -126,7 +127,7 @@ def DumpTable(driver, table, name_query_ob, shorten, large_props, stream=None):
             prop_name = GetPropTagName(name_query_ob, prop_tag)
             prop_repr = FormatPropertyValue(prop_tag, prop_val, name_query_ob,
                                             shorten, large_props)
-            print("%-20s: %s" % (prop_name, prop_repr), file=stream)
+            print >> stream, "%-20s: %s" % (prop_name, prop_repr)
 
 # This dumps the raw binary data of the property Outlook uses to store
 # user defined fields.
@@ -144,13 +145,13 @@ def FindAndDumpTableUserProps(driver, table, folder, shorten,
     prop_name = GetPropTagName(folder, tag)
     prop_repr = FormatPropertyValue(tag, val, folder,
                                     shorten, get_large_props)
-    print("%-20s: %s" % (prop_name, prop_repr), file=stream)
+    print >> stream, "%-20s: %s" % (prop_name, prop_repr)
 
 def usage(driver, extra = None):
     folder_doc = driver.GetFolderNameDoc()
     if extra:
-        print(extra)
-        print()
+        print extra
+        print
     msg = """\
 Usage: %s [options ...] subject of the message
 
@@ -173,7 +174,7 @@ matching is substring and ignore-case.
 %s
 Use the -n option to see all top-level folder names from all stores.""" \
     % (os.path.basename(sys.argv[0]),folder_doc)
-    print(msg)
+    print msg
     sys.exit(1)
 
 def main():
@@ -186,7 +187,7 @@ def main():
                                     "dump-folder-assoc-contents",
                                     "dump-folder-user-props",
                                     ])
-    except getopt.error as e:
+    except getopt.error, e:
         usage(driver, e)
     folder_name = ""
 
@@ -237,8 +238,8 @@ def main():
         usage(driver, extra)
     try:
         folder = driver.FindFolder(folder_name)
-    except ValueError as details:
-        print(details)
+    except ValueError, details:
+        print details
         sys.exit(1)
 
     if is_table_dump:
@@ -262,7 +263,7 @@ def main():
         win32clipboard.SetClipboardText(stream.read())
         stream.close()
         os.unlink(stream_name)
-        print("Output successfuly written to the Windows clipboard")
+        print "Output successfuly written to the Windows clipboard"
 
 if __name__=='__main__':
     main()

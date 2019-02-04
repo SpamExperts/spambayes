@@ -1,7 +1,5 @@
 #! /usr/local/bin/python
 
-from __future__ import print_function
-from builtins import str
 import os
 import sys
 import regex
@@ -43,7 +41,7 @@ def strip(fi, fo):
         bstart = bstart + len(bodysearch.group(0))
     if bannersearch.search(data) >= 0:
         i, j = bannersearch.regs[0]
-        print("banner", i, j, repr(data[i:j]))
+        print "banner", i, j, `data[i:j]`
         data = data[:i] + data[j:]
     end = ebodyearch.search(data, bstart)
     if end < 0:
@@ -73,7 +71,7 @@ def makedirs(dirname):
         if not makedirs(head):
             return 0
     try:
-        os.mkdir(dirname, 0o777)
+        os.mkdir(dirname, 0777)
         return 1
     except os.error:
         return 0

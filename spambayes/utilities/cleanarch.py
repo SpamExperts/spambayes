@@ -45,7 +45,6 @@ Options:
     -h / --help
         Print this message and exit
 """
-from __future__ import print_function
 
 import sys
 import re
@@ -62,9 +61,9 @@ fre = re.compile(r'[\041-\071\073-\0176]+')
 
 
 def usage(code, msg=''):
-    print(__doc__, file=sys.stderr)
+    print >> sys.stderr, __doc__
     if msg:
-        print(msg, file=sys.stderr)
+        print >> sys.stderr, msg
     sys.exit(code)
 
 
@@ -73,7 +72,7 @@ def escape_line(line, lineno, quiet, output):
     if output:
         sys.stdout.write('>' + line)
     if not quiet:
-        print('[%d]' % lineno, line[:-1], file=sys.stderr)
+        print >> sys.stderr, '[%d]' % lineno, line[:-1]
 
 
 
@@ -82,7 +81,7 @@ def main():
         opts, args = getopt.getopt(
             sys.argv[1:], 'hqns:',
             ['help', 'quiet', 'dry-run', 'status='])
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(1, msg)
 
     quiet = 0
@@ -148,10 +147,10 @@ def main():
             sys.stderr.write('#')
             statuscnt += 1
             if statuscnt > 50:
-                print(file=sys.stderr)
+                print >> sys.stderr
                 statuscnt = 0
 
-    print(messages, 'messages found', file=sys.stderr)
+    print >> sys.stderr, messages, 'messages found'
 
 
 

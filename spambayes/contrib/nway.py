@@ -62,7 +62,6 @@ Note that I've not tried this (yet).  It should simplify the logic in a
 convoluted procmail rules.
 
 """
-from __future__ import print_function
 
 import getopt
 import sys
@@ -72,7 +71,7 @@ from spambayes import hammie, mboxutils, Options
 prog = os.path.basename(sys.argv[0])
 
 def usage():
-    print(__doc__ % globals(), file=sys.stderr)
+    print >> sys.stderr, __doc__ % globals()
 
 def main(args):
     opts, args = getopt.getopt(args, "h")

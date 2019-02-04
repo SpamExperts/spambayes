@@ -1,15 +1,9 @@
-from __future__ import print_function
-from future import standard_library
-standard_library.install_aliases()
-from builtins import range
-from builtins import object
 import os
 import sys
 import errno
 import unittest
 import time
-from urllib.request import urlopen
-from urllib.parse import urlencode
+from urllib import urlopen, urlencode
 
 import sb_test_support
 sb_test_support.fix_sys_path()
@@ -25,11 +19,11 @@ def call_web_function(url, **kw):
     got = urlopen(url, urlencode(kw)).read()
     # Very simple - just look for tracebacks
     if got.find("Traceback (most recent call last)")>=0:
-        print("FAILED calling URL", url)
-        print(got)
-        raise AssertionError("Opening URL %s appeared to fail" % (url,))
+        print "FAILED calling URL", url
+        print got
+        raise AssertionError, "Opening URL %s appeared to fail" % (url,)
 
-class Spawner(object):
+class Spawner:
     def __init__(self, test_case, spawn_args):
         self.test_case = test_case
         self.spawn_args = spawn_args
@@ -61,7 +55,7 @@ class Spawner(object):
             try:
                 os.waitpid(self.pid, os.WNOHANG)
                 result = True
-            except os.error as details:
+            except os.error, details:
                 if details.errno == errno.ECHILD:
                     result = False
                 # other exceptions invalid?
@@ -92,14 +86,14 @@ class Spawner_sb_server(Spawner):
         self.test_case.failUnless(not is_any_sb_server_running(),
                                   "Should be no server running")
         if verbose > 1:
-            print("Spawning", self.spawn_args)
+            print "Spawning", self.spawn_args
         self.pid = self._spawn(self.spawn_args)
         # wait for it to start - 5 secs, 0.25 per check
         for i in range(20):
             time.sleep(0.25)
             if verbose > 1:
-                print("Waiting for start flags: running=%s, global_mutex=%s" \
-                       % (self.is_running(), is_any_sb_server_running()))
+                print "Waiting for start flags: running=%s, global_mutex=%s" \
+                       % (self.is_running(), is_any_sb_server_running())
             if self.is_running() and is_any_sb_server_running():
                 return
         # gave up waiting.
@@ -141,7 +135,7 @@ class TestServer(unittest.TestCase):
         # If we cause failure here, we mask the underlying error which left
         # the server running - so just print the warning.
         if is_any_sb_server_running():
-            print("WARNING:", self, "completed with the platform mutex held")
+            print "WARNING:", self, "completed with the platform mutex held"
     def _start_spawner(self, spawner):
         self.failUnless(not spawner.is_running(),
                         "this spawneer can't be running")
@@ -192,7 +186,7 @@ if sys.platform.startswith("win"):
         def setUp(self):
             try:
                 win32serviceutil.QueryServiceStatus(service_name)
-            except win32service.error as details:
+            except win32service.error, details:
                 if details[0]==winerror.ERROR_SERVICE_DOES_NOT_EXIST:
                     self.was_installed = False
                 raise
@@ -203,7 +197,7 @@ if sys.platform.startswith("win"):
                             "(platform mutex held)")
         def tearDown(self):
             if is_any_sb_server_running():
-                print("WARNING:", self, "completed with the platform mutex held")
+                print "WARNING:", self, "completed with the platform mutex held"
         def _start_service(self):
             win32serviceutil.StartService(service_name)
             for i in range(10):
@@ -212,7 +206,7 @@ if sys.platform.startswith("win"):
                 if status[1] == win32service.SERVICE_RUNNING:
                     break
                 if verbose > 1:
-                    print("Service status is %d - still waiting" % status[1])
+                    print "Service status is %d - still waiting" % status[1]
             else:
                 self.fail("Gave up waiting for service to start")
         def _stop_service(self):

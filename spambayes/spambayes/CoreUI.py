@@ -35,7 +35,6 @@ User interface improvements:
 
  o Suggestions?
 """
-from __future__ import division
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
@@ -44,9 +43,6 @@ from __future__ import division
 # This module was forked from ProxyUI.py to provide a basic user interface
 # for core_server.py.
 
-from builtins import str
-from builtins import object
-from past.utils import old_div
 __author__ = "Richie Hindle <richie@entrian.com>"
 __credits__ = "Tim Peters, Neale Pickett, Tim Stone, all the Spambayes folk."
 
@@ -194,7 +190,7 @@ class CoreUserInterface(UserInterface.UserInterface):
         page or zero if there isn't one, likewise the start of the given page,
         and likewise the start of the next page."""
         # Fetch all the message keys
-        allKeys = list(self.state.unknownCorpus.keys())
+        allKeys = self.state.unknownCorpus.keys()
         # We have to sort here to split into days.
         # Later on, we also sort the messages that will be on the page
         # (by whatever column we wish).
@@ -210,8 +206,8 @@ class CoreUserInterface(UserInterface.UserInterface):
         start, end, date = self._getTimeRange(timestamp)
 
         # Find the subset of the keys within this range.
-        startKeyIndex = bisect.bisect(allKeys, "%d" % int(start))
-        endKeyIndex = bisect.bisect(allKeys, "%d" % int(end))
+        startKeyIndex = bisect.bisect(allKeys, "%d" % long(start))
+        endKeyIndex = bisect.bisect(allKeys, "%d" % long(end))
         keys = allKeys[startKeyIndex:endKeyIndex]
         keys.reverse()
 
@@ -235,7 +231,7 @@ class CoreUserInterface(UserInterface.UserInterface):
         numTrained = 0
         numDeferred = 0
         if params.get('go') != _('Refresh'):
-            for key, value in list(params.items()):
+            for key, value in params.items():
                 if key.startswith('classify:'):
                     old_class, id = key.split(':')[1:3]
                     if value == _('spam'):
@@ -324,7 +320,7 @@ class CoreUserInterface(UserInterface.UserInterface):
             except ValueError:
                 max_results = 1
             key = params['find']
-            if 'ignore_case' in params:
+            if params.has_key('ignore_case'):
                 ic = True
             else:
                 ic = False
@@ -334,39 +330,39 @@ class CoreUserInterface(UserInterface.UserInterface):
                 page = _("<p>You must enter a search string.</p>")
             else:
                 if len(keys) < max_results and \
-                   'id' in params:
+                   params.has_key('id'):
                     if self.state.unknownCorpus.get(key):
                         push((key, self.state.unknownCorpus))
                     elif self.state.hamCorpus.get(key):
                         push((key, self.state.hamCorpus))
                     elif self.state.spamCorpus.get(key):
                         push((key, self.state.spamCorpus))
-                if 'subject' in params or 'body' in params or \
-                   'headers' in params:
+                if params.has_key('subject') or params.has_key('body') or \
+                   params.has_key('headers'):
                     # This is an expensive operation, so let the user know
                     # that something is happening.
                     self.write(_('<p>Searching...</p>'))
                     for corp in [self.state.unknownCorpus,
                                  self.state.hamCorpus,
                                  self.state.spamCorpus]:
-                        for k in list(corp.keys()):
+                        for k in corp.keys():
                             if len(keys) >= max_results:
                                 break
                             msg = corp[k]
                             msg.load()
-                            if 'subject' in params:
+                            if params.has_key('subject'):
                                 subj = str(msg['Subject'])
                                 if self._contains(subj, key, ic):
                                     push((k, corp))
-                            if 'body' in params:
+                            if params.has_key('body'):
                                 # For [ 906581 ] Assertion failed in search
                                 # subject.  Can the headers be a non-string?
                                 msg_body = msg.as_string()
                                 msg_body = msg_body[msg_body.index('\r\n\r\n'):]
                                 if self._contains(msg_body, key, ic):
                                     push((k, corp))
-                            if 'headers' in params:
-                                for nm, val in list(msg.items()):
+                            if params.has_key('headers'):
+                                for nm, val in msg.items():
                                     # For [ 906581 ] Assertion failed in
                                     # search subject.  Can the headers be
                                     # a non-string?
@@ -406,7 +402,7 @@ class CoreUserInterface(UserInterface.UserInterface):
                             }
         invalid_keys = []
         for key in keys:
-            if isinstance(key, tuple):
+            if isinstance(key, types.TupleType):
                 key, sourceCorpus = key
             else:
                 sourceCorpus = self.state.unknownCorpus
@@ -595,7 +591,7 @@ class CoreUserInterface(UserInterface.UserInterface):
             images[baseName] = module.data
         return ui_html.data, images
 
-class CoreState(object):
+class CoreState:
     """This keeps the global state of the module - the command-line options,
     statistics like how many mails have been classified, the handle of the
     log file, the Classifier and FileCorpus objects, and so on."""
@@ -701,13 +697,13 @@ class CoreState(object):
         nspam = self.bayes.nspam
         nham = self.bayes.nham
         if nspam > 10 and nham > 10:
-            db_ratio = old_div(nham,float(nspam))
+            db_ratio = nham/float(nspam)
             if db_ratio > 5.0:
                 self.warning = _("Warning: you have much more ham than " \
                                  "spam - SpamBayes works best with " \
                                  "approximately even numbers of ham and " \
                                  "spam.")
-            elif db_ratio < (old_div(1,5.0)):
+            elif db_ratio < (1/5.0):
                 self.warning = _("Warning: you have much more spam than " \
                                  "ham - SpamBayes works best with " \
                                  "approximately even numbers of ham and " \
@@ -798,7 +794,7 @@ class CoreState(object):
         """The message name is the time it arrived with a uniquifier
         appended if two arrive within one clock tick of each other.
         """
-        message_name = "%10.10d" % int(time.time())
+        message_name = "%10.10d" % long(time.time())
         if message_name == self.last_base_message_name:
             message_name = "%s-%d" % (message_name, self.uniquifier)
             self.uniquifier += 1
@@ -860,7 +856,7 @@ class CoreState(object):
                 # an installer can check if we are running
                 try:
                     hmutex = win32event.CreateMutex(None, True, mutex_name)
-                except win32event.error as details:
+                except win32event.error, details:
                     # If another user has the mutex open, we get an "access
                     # denied" error - this is still telling us what we need
                     # to know.

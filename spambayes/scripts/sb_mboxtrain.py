@@ -41,7 +41,6 @@ Where OPTIONS is one or more of:
     -o section:option:value
         set [section, option] in the options database to value
 """
-from __future__ import print_function
 
 import sys, os, getopt, email
 import shutil
@@ -107,7 +106,7 @@ def maildir_train(h, path, is_spam, force, removetrained):
     """Train bayes with all messages from a maildir."""
 
     if loud:
-        print("  Reading %s as Maildir" % (path,))
+        print "  Reading %s as Maildir" % (path,)
 
     import time
     import socket
@@ -132,7 +131,7 @@ def maildir_train(h, path, is_spam, force, removetrained):
         msg = get_message(f)
         f.close()
         if not msg:
-            print("Malformed message: %s.  Skipping..." % cfn)
+            print "Malformed message: %s.  Skipping..." % cfn
             continue
         if not msg_train(h, msg, is_spam, force):
             continue
@@ -159,7 +158,7 @@ def mbox_train(h, path, is_spam, force):
     """Train bayes with a Unix mbox"""
 
     if loud:
-        print("  Reading as Unix mbox")
+        print "  Reading as Unix mbox"
 
     import mailbox
     import fcntl
@@ -176,7 +175,7 @@ def mbox_train(h, path, is_spam, force):
 
     for msg in mbox:
         if not msg:
-            print("Malformed message number %d.  I can't train on this mbox, sorry." % counter)
+            print "Malformed message number %d.  I can't train on this mbox, sorry." % counter
             return
         counter += 1
         if loud and counter % 10 == 0:
@@ -195,15 +194,15 @@ def mbox_train(h, path, is_spam, force):
             f.seek(0)
         except:
             # If anything goes wrong, don't try to write
-            print("Problem truncating mbox--nothing written")
+            print "Problem truncating mbox--nothing written"
             raise
         try:
-            for line in outf:
+            for line in outf.xreadlines():
                 f.write(line)
         except:
-            print(file=sys.stderr ("Problem writing mbox!  Sorry, "
+            print >> sys.stderr ("Problem writing mbox!  Sorry, "
                                  "I tried my best, but your mail "
-                                 "may be corrupted."))
+                                 "may be corrupted.")
             raise
 
     fcntl.flock(f, fcntl.LOCK_UN)
@@ -217,7 +216,7 @@ def mhdir_train(h, path, is_spam, force):
     """Train bayes with an mh directory"""
 
     if loud:
-        print("  Reading as MH mailbox")
+        print "  Reading as MH mailbox"
 
     import glob
 
@@ -236,7 +235,7 @@ def mhdir_train(h, path, is_spam, force):
         msg = get_message(f)
         f.close()
         if not msg:
-            print("Malformed message: %s.  Skipping..." % cfn)
+            print "Malformed message: %s.  Skipping..." % cfn
             continue
         msg_train(h, msg, is_spam, force)
         trained += 1
@@ -276,9 +275,9 @@ def train(h, path, is_spam, force, trainnew, removetrained):
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__ % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__ % globals()
     sys.exit(code)
 
 def main():
@@ -288,7 +287,7 @@ def main():
 
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hfqnrd:p:g:s:o:')
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(2, msg)
 
     if not opts:
@@ -330,14 +329,14 @@ def main():
 
     for g in good:
         if loud:
-            print("Training ham (%s):" % g)
+            print "Training ham (%s):" % g
         train(h, g, False, force, trainnew, removetrained)
         sys.stdout.flush()
         save = True
 
     for s in spam:
         if loud:
-            print("Training spam (%s):" % s)
+            print "Training spam (%s):" % s
         train(h, s, True, force, trainnew, removetrained)
         sys.stdout.flush()
         save = True

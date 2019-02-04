@@ -55,7 +55,6 @@ Where options are:
     -h
         print this message and exit.
 """
-from __future__ import print_function
 
 __version__ = '2.0'
 
@@ -71,9 +70,9 @@ sys.path.insert(0, os.getcwd())
 
 
 def usage(code, msg=''):
-    print(__doc__ % globals())
+    print __doc__ % globals()
     if msg:
-        print(msg)
+        print msg
     sys.exit(code)
 
 
@@ -86,7 +85,7 @@ def main():
             ['help', 'rootdir=', 'style=', 'backup', 'backupext=',
              'force', 'quiet', 'version'])
 
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(1, msg)
 
     rootdir = '.'
@@ -100,7 +99,7 @@ def main():
         if opt in ('-h', '--help'):
             usage(0)
         elif opt in ('-v', '--version'):
-            print('ht2html version', __version__)
+            print 'ht2html version', __version__
             sys.exit(0)
         elif opt in ('-r', '--rootdir'):
 ##            rootdir = os.path.expanduser(arg)
@@ -123,7 +122,7 @@ def main():
     absroot = os.path.abspath(rootdir)
     curdir = os.path.abspath('.')
     prefix = os.path.commonprefix([absroot, curdir])
-    if prefix != absroot:
+    if prefix <> absroot:
         usage(1, 'Root directory must be relative to current directory')
     relthis = curdir[len(prefix)+1:]
     if not relthis:
@@ -141,15 +140,15 @@ def main():
     # process all the files on the command line
     for file in args:
         if not quiet:
-            print('Processing %s...' % file)
+            print 'Processing %s...' % file
         # get the target filename
         root, ext = os.path.splitext(file)
         htmlfile = root + '.html'
         try:
             g = GenClass(file, rootdir, relthis)
-        except IOError as msg:
-            print('The source file is unreadable, skipping:', file)
-            print(msg)
+        except IOError, msg:
+            print 'The source file is unreadable, skipping:', file
+            print msg
             continue
         # deal with backups, first load the original file
         try:
@@ -165,7 +164,7 @@ def main():
             if not force:
                 continue
         try:
-            omask = os.umask(0o02)
+            omask = os.umask(002)
             if origfound and backup:
                 fp = open(htmlfile + '.generated', 'w')
                 fp.write(newtext)
@@ -176,9 +175,9 @@ def main():
                 fp = open(htmlfile, 'w')
                 fp.write(newtext)
                 fp.close()
-        except IOError as e:
+        except IOError, e:
             if e.errno == errno.EACCES:
-                print(e)
+                print e
             else:
                 raise
 

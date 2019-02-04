@@ -1,4 +1,3 @@
-from __future__ import print_function
 # Copyright 2004, Matthew Dixon Cowles <matt@mondoinfo.com>.
 # Distributable under the same terms as the Python programming language.
 # Inspired by the KevinL's cache included with PyDNS.
@@ -8,9 +7,6 @@ from __future__ import print_function
 # Version 0.11 2004 07 06 Fixed zero division error in __del__
 
 # From http://sourceforge.net/projects/pydns/
-from builtins import map
-from builtins import range
-from builtins import object
 import DNS
 
 import sys
@@ -64,12 +60,12 @@ def sort_by_attr(seq, attr):
     # (seq[i].attr, i, seq[i]) and sort it. The second item of tuple is needed not
     # only to provide stable sorting, but mainly to eliminate comparison of objects
     # (which can be expensive or prohibited) in case of equal attribute values.
-    intermed = map(None, list(map(getattr, seq, (attr,)*len(seq))), range(len(seq)), seq)
+    intermed = map(None, map(getattr, seq, (attr,)*len(seq)), xrange(len(seq)), seq)
     intermed.sort()
-    return list(map(operator.getitem, intermed, (-1,) * len(intermed)))
+    return map(operator.getitem, intermed, (-1,) * len(intermed))
 
 
-class cache(object):
+class cache:
     def __init__(self, dnsServer=None, cachefile=""):
     # These attributes intended for user setting
         self.printStatsAtEnd = False
@@ -109,12 +105,12 @@ class cache(object):
 
         if options["globals", "verbose"]:
             if self.caches["A"] or self.caches["PTR"]:
-                print("opened existing cache with", end=' ', file=sys.stderr)
-                print(len(self.caches["A"]), "A records", end=' ', file=sys.stderr)
-                print("and", len(self.caches["PTR"]), end=' ', file=sys.stderr)
-                print("PTR records", file=sys.stderr)
+                print >> sys.stderr, "opened existing cache with",
+                print >> sys.stderr, len(self.caches["A"]), "A records",
+                print >> sys.stderr, "and", len(self.caches["PTR"]),
+                print >> sys.stderr, "PTR records"
             else:
-                print("opened new cache", file=sys.stderr)
+                print >> sys.stderr, "opened new cache"
 
         self.hits=0 # These two for statistics
         self.misses=0
@@ -134,26 +130,26 @@ class cache(object):
             pickle_write(self.cachefile, self.caches)
 
     def printStats(self):
-        for key,val in list(self.caches.items()):
+        for key,val in self.caches.items():
             totAnswers=0
-            for item in list(val.values()):
+            for item in val.values():
                 totAnswers+=len(item)
-            print("cache", key, "has", len(self.caches[key]), end=' ', file=sys.stderr)
-            print("question(s) and", totAnswers, "answer(s)", file=sys.stderr)
+            print >> sys.stderr, "cache", key, "has", len(self.caches[key]),
+            print >> sys.stderr, "question(s) and", totAnswers, "answer(s)"
         if self.hits+self.misses == 0:
-            print("No queries", file=sys.stderr)
+            print >> sys.stderr, "No queries"
         else:
-            print(self.hits, "hits,", self.misses, "misses", end=' ', file=sys.stderr)
-            print("(%.1f%% hits)" % \
-                  (self.hits/float(self.hits+self.misses)*100), file=sys.stderr)
+            print >> sys.stderr, self.hits, "hits,", self.misses, "misses",
+            print >> sys.stderr, "(%.1f%% hits)" % \
+                  (self.hits/float(self.hits+self.misses)*100)
 
     def prune(self, now):
         # I want this to be as fast as reasonably possible.
         # If I didn't, I'd probably do various things differently
         # Is there a faster way to do this?
         allAnswers = []
-        for cache in list(self.caches.values()):
-            for val in list(cache.values()):
+        for cache in self.caches.values():
+            for val in cache.values():
                 allAnswers += val
 
         allAnswers = sort_by_attr(allAnswers,"expiresAt")
@@ -181,7 +177,7 @@ class cache(object):
         allAnswers = sort_by_attr(allAnswers, "lastUsed")
         allAnswers.reverse()
         numToDelete = len(allAnswers)-kPruneDownTo
-        for _count in range(numToDelete):
+        for _count in xrange(numToDelete):
             answer = allAnswers.pop()
             c = self.caches[answer.qType]
             c[answer.question].remove(answer)
@@ -204,7 +200,7 @@ class cache(object):
     def lookup(self,question,qType="A"):
         qType = qType.upper()
         if qType not in ("A","PTR"):
-            raise ValueError("Query type must be one of A, PTR")
+            raise ValueError,"Query type must be one of A, PTR"
 
         now = int(time.time())
 
@@ -234,7 +230,7 @@ class cache(object):
                         thisAnswer.lastUsed = now
                         ind += 1
             else:
-                print("lookup failure:", question, file=sys.stderr)
+                print >> sys.stderr, "lookup failure:", question
 
             if not answers:
                 del cacheToLookIn[question]
@@ -256,20 +252,20 @@ class cache(object):
         try:
             reply = self.queryObj.req(queryQuestion, qtype=qType,
                                       timeout=self.dnsTimeout)
-        except DNS.Base.DNSError as detail:
+        except DNS.Base.DNSError,detail:
             if detail.args[0] not in ("Timeout", "nothing to lookup"):
-                print(detail.args[0], file=sys.stderr)
-                print("Error, fixme", detail, file=sys.stderr)
-                print("Question was", queryQuestion, file=sys.stderr)
-                print("Original question was", question, file=sys.stderr)
-                print("Type was", qType, file=sys.stderr)
+                print >> sys.stderr, detail.args[0]
+                print >> sys.stderr, "Error, fixme", detail
+                print >> sys.stderr, "Question was", queryQuestion
+                print >> sys.stderr, "Original question was", question
+                print >> sys.stderr, "Type was", qType
             objs = [lookupResult(qType, None, question,
                                  self.cacheErrorSecs+now, now)]
             cacheToLookIn[question] = objs # Add to format for return?
             return self.formatForReturn(objs)
-        except socket.gaierror as detail:
-            print("DNS connection failure:", self.queryObj.ns, detail, file=sys.stderr)
-            print("Defaults:", DNS.defaults, file=sys.stderr)
+        except socket.gaierror,detail:
+            print >> sys.stderr, "DNS connection failure:", self.queryObj.ns, detail
+            print >> sys.stderr, "Defaults:", DNS.defaults
 
         objs = []
         for answer in reply.answers:
@@ -312,7 +308,7 @@ class cache(object):
         auth = reply.authority[0]
         auTTL = int(auth["ttl"])
         for item in auth["data"]:
-            if type(item) == tuple and item[0] == "minimum":
+            if type(item) == types.TupleType and item[0] == "minimum":
                 auMin = int(item[1])
                 cacheNeg = min(auMin,auTTL)
                 break
@@ -331,24 +327,24 @@ def main():
     for host in ["www.python.org", "www.timsbloggers.com",
                  "www.seeputofor.com", "www.completegarbage.tv",
                  "www.tradelinkllc.com"]:
-        print("checking", host, file=sys.stderr)
+        print >> sys.stderr, "checking", host
         now = time.time()
         ips = c.lookup(host)
-        print(ips, time.time()-now, file=sys.stderr)
+        print >> sys.stderr, ips, time.time()-now
         now = time.time()
         ips = c.lookup(host)
-        print(ips, time.time()-now, file=sys.stderr)
+        print >> sys.stderr, ips, time.time()-now
 
         if ips:
             ip = ips[0]
             now = time.time()
             name = c.lookup(ip, qType="PTR")
-            print(name, time.time()-now, file=sys.stderr)
+            print >> sys.stderr, name, time.time()-now
             now = time.time()
             name = c.lookup(ip, qType="PTR")
-            print(name, time.time()-now, file=sys.stderr)
+            print >> sys.stderr, name, time.time()-now
         else:
-            print("unknown", file=sys.stderr)
+            print >> sys.stderr, "unknown"
 
     c.close()
 

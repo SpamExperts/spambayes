@@ -25,13 +25,11 @@ To Do:
       time data stored, it wouldn't be too bad, so maybe it can go in.
     o Suggestions?
 """
-from __future__ import print_function
 
 # This module is part of the spambayes project, which is Copyright 2002-2007
 # The Python Software Foundation and is covered by the Python Software
 # Foundation license.
 
-from builtins import object
 __author__ = "Tony Meyer <ta-meyer@ihug.co.nz>"
 __credits__ = "Kenny Pitt, Mark Hammond, all the spambayes folk."
 
@@ -150,7 +148,7 @@ class Stats(object):
         """
         self.ResetTotal()
         totals = self.totals
-        for msg_id in list(self.messageinfo_db.keys()):
+        for msg_id in self.messageinfo_db.keys():
             # Skip the date and persistent statistics keys.
             if msg_id == STATS_START_KEY:
                 continue
@@ -401,4 +399,4 @@ class Stats(object):
 
 if __name__ == '__main__':
     s = Stats()
-    print("\n".join(s.GetStats()))
+    print "\n".join(s.GetStats())

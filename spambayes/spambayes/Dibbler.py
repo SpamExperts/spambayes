@@ -157,27 +157,20 @@ few more options, like launching the web browser automatically.
 Running `Dibbler.py` directly as a script runs the example calendar server
 plus a self-test.
 """
-from __future__ import print_function
 
 # Dibbler is released under the Python Software Foundation license; see
 # http://www.python.org/
 
-from future import standard_library
-standard_library.install_aliases()
-from builtins import input
-from builtins import str
-from builtins import filter
-from builtins import object
 __author__ = "Richie Hindle <richie@entrian.com>"
 __credits__ = "Tim Stone"
 
 try:
-    import io as StringIO
+    import cStringIO as StringIO
 except ImportError:
-    import io
+    import StringIO
 
 import sys, re, time, traceback, base64
-import socket, cgi, urllib.parse, webbrowser
+import socket, cgi, urlparse, webbrowser
 
 try:
     "".rstrip("abc")
@@ -232,7 +225,7 @@ class BrighterAsyncChat(asynchat.async_chat):
         self.socket.close()
 
 
-class Context(object):
+class Context:
     """See the main documentation for details of `Dibbler.Context`."""
     def __init__(self, asyncMap=asyncore.socket_map):
         self._HTTPPort = None  # Stores the port for `run(launchBrowser=True)`
@@ -240,7 +233,7 @@ class Context(object):
     def pop(self, key):
         return self._map.pop(key)
     def keys(self):
-        return list(self._map.keys())
+        return self._map.keys()
     def __len__(self):
         return len(self._map)
 
@@ -290,7 +283,7 @@ class Listener(asyncore.dispatcher):
         try:
             self.bind(port)
         except socket.error:
-            print("port", port, "in use", file=sys.stderr)
+            print >> sys.stderr, "port", port, "in use"
             raise
         self.listen(5)
 
@@ -410,7 +403,7 @@ class _HTTPHandler(BrighterAsyncChat):
 
         # Parse the URL, and deal with POST vs. GET requests.
         method = method.upper()
-        unused, unused, path, unused, query, unused = urllib.parse.urlparse(url)
+        unused, unused, path, unused, query, unused = urlparse.urlparse(url)
         cgiParams = cgi.parse_qs(query, keep_blank_values=True)
         if self.get_terminator() == '\r\n\r\n' and method == 'POST':
             # We need to read the body - set a numeric async_chat terminator
@@ -432,7 +425,7 @@ class _HTTPHandler(BrighterAsyncChat):
             contentType, pdict = cgi.parse_header(contentTypeHeader)
             if contentType == 'multipart/form-data':
                 # multipart/form-data - probably a file upload.
-                bodyFile = io.StringIO(body)
+                bodyFile = StringIO.StringIO(body)
                 cgiParams.update(cgi.parse_multipart(bodyFile, pdict))
             else:
                 # A normal x-www-form-urlencoded.
@@ -440,7 +433,7 @@ class _HTTPHandler(BrighterAsyncChat):
 
         # Convert the cgi params into a simple dictionary.
         params = {}
-        for name, value in cgiParams.items():
+        for name, value in cgiParams.iteritems():
             params[name] = value[0]
 
         # Parse the headers.
@@ -464,7 +457,7 @@ class _HTTPHandler(BrighterAsyncChat):
                 elif authenticationMode == HTTPServer.DIGEST_AUTHENTICATION:
                     authResult = self._digestAuthentication(login, method)
                 else:
-                    print("Unknown mode: %s" % authenticationMode, file=sys.stderr)
+                    print >> sys.stderr, "Unknown mode: %s" % authenticationMode
 
             if not authResult:
                 self.writeUnauthorizedAccess(serverAuthMode)
@@ -497,7 +490,7 @@ class _HTTPHandler(BrighterAsyncChat):
                         # Close all the listeners so that no further incoming
                         # connections appear.
                         contextMap = self._context._map
-                        for dispatcher in list(contextMap.values()):
+                        for dispatcher in contextMap.values():
                             if isinstance(dispatcher, Listener):
                                 dispatcher.close()
 
@@ -509,7 +502,7 @@ class _HTTPHandler(BrighterAsyncChat):
                         def isProtected(dispatcher):
                             return not isinstance(dispatcher, _HTTPHandler)
 
-                        while len(list(filter(isProtected, list(contextMap.values())))) > 0:
+                        while len(filter(isProtected, contextMap.values())) > 0:
                             asyncore.poll(timeout=1, map=contextMap)
 
                         raise SystemExit
@@ -543,7 +536,7 @@ class _HTTPHandler(BrighterAsyncChat):
         headers.append("Connection: close")
         headers.append('Content-Type: %s; charset="utf-8"' % contentType)
         headers.append("Date: %s" % httpNow)
-        for name, value in list(extraHeaders.items()):
+        for name, value in extraHeaders.items():
             headers.append("%s: %s" % (name, value))
         headers.append("")
         headers.append("")
@@ -664,7 +657,7 @@ class _HTTPHandler(BrighterAsyncChat):
         HA2 = md5(A2).hexdigest()
 
         unhashedDigest = ""
-        if "qop" in options:
+        if options.has_key("qop"):
             # IE 6.0 doesn't give nc back correctly?
             if not options["nc"]:
                 options["nc"] = "00000001"
@@ -684,7 +677,7 @@ class _HTTPHandler(BrighterAsyncChat):
                 self._isValidNonce(nonce))
 
 
-class HTTPPlugin(object):
+class HTTPPlugin:
     """Base class for HTTP server plugins.  See the main documentation for
     details."""
 
@@ -737,8 +730,8 @@ def run(launchBrowser=False, context=_defaultContext):
         try:
             url = "http://localhost:%d/" % context._HTTPPort
             webbrowser.open_new(url)
-        except webbrowser.Error as e:
-            print("\n%s.\nPlease point your web browser at %s." % (e, url))
+        except webbrowser.Error, e:
+            print "\n%s.\nPlease point your web browser at %s." % (e, url)
     asyncore.loop(map=context._map)
 
 
@@ -776,27 +769,27 @@ def runTestServer(readyEvent=None):
 def test():
     """Run a self-test."""
     # Run the calendar server in a separate thread.
-    import threading, urllib.request, urllib.parse, urllib.error
+    import threading, urllib
     testServerReady = threading.Event()
     threading.Thread(target=runTestServer, args=(testServerReady,)).start()
     testServerReady.wait()
 
     # Connect to the server and ask for a calendar.
-    page = urllib.request.urlopen("http://localhost:8888/?year=2003").read()
+    page = urllib.urlopen("http://localhost:8888/?year=2003").read()
     if page.find('January') != -1:
-        print("Self test passed.")
+        print "Self test passed."
     else:
-        print("Self-test failed!")
+        print "Self-test failed!"
 
     # Wait for a key while the user plays with his browser.
-    input("Press any key to shut down the application server...")
+    raw_input("Press any key to shut down the application server...")
 
     # Ask the server to shut down.
-    page = urllib.request.urlopen("http://localhost:8888/shutdown").read()
+    page = urllib.urlopen("http://localhost:8888/shutdown").read()
     if page.find('OK') != -1:
-        print("Shutdown OK.")
+        print "Shutdown OK."
     else:
-        print("Shutdown failed!")
+        print "Shutdown failed!"
 
 if __name__ == '__main__':
     test()

@@ -1,4 +1,3 @@
-from __future__ import print_function
 # not sure where this should go yet.
 import config
 import copy
@@ -140,7 +139,7 @@ def CancelWizardConfig(manager, wc):
             try:
                 os.remove(fname)
             except OSError:
-                print("Warning: unable to remove", fname)
+                print "Warning: unable to remove", fname
 
 def CreateWizardConfig(manager, from_existing):
     import config

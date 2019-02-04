@@ -1,15 +1,9 @@
-from __future__ import print_function
 # SpamBayes Outlook Addin
-from future import standard_library
-standard_library.install_aliases()
-from builtins import str
-from builtins import range
-from builtins import object
 import sys, os
 import types
 import warnings
 import traceback
-import winreg
+import _winreg
 from types import UnicodeType
 
 # *sigh* - this is for the binary installer, and for the sake of one line
@@ -41,7 +35,7 @@ from win32com.client import constants, getevents
 
 import win32gui, win32con, win32clipboard # for button images!
 
-import timer, _thread
+import timer, thread
 
 from dialogs.dlgutils import SetWaitCursor
 
@@ -112,9 +106,9 @@ universal.RegisterInterfaces('{AC0714F2-3D04-11D1-AE7D-00A0C90F26F4}', 0, 1, 0,
 try:
     from win32com.client import CastTo, WithEvents
 except ImportError:
-    print("*" * 50)
-    print("You appear to be running a win32all version pre 151, which is pretty old")
-    print("I'm afraid it is time to upgrade")
+    print "*" * 50
+    print "You appear to be running a win32all version pre 151, which is pretty old"
+    print "I'm afraid it is time to upgrade"
     raise
 # we seem to have all the COM support we need - let's rock!
 
@@ -140,18 +134,18 @@ def HaveSeenMessage(msgstore_message, manager):
 def TrainAsHam(msgstore_message, manager, rescore = True, save_db = True):
     import train
     subject = msgstore_message.subject
-    print("Training on message '%s' in '%s - " % \
+    print "Training on message '%s' in '%s - " % \
             (subject,
-             msgstore_message.GetFolder().GetFQName()), end=' ')
+             msgstore_message.GetFolder().GetFQName()),
     if train.train_message(msgstore_message, False, manager.classifier_data):
-        print("trained as good")
+        print "trained as good"
         # Simplest way to rescore is to re-filter with all_actions = False
         if rescore:
             import filter
             filter.filter_message(msgstore_message, manager, all_actions = False)
 
     else:
-        print("already was trained as good")
+        print "already was trained as good"
     manager.classifier_data.message_db.load_msg(msgstore_message)
     assert train.been_trained_as_ham(msgstore_message)
     if save_db:
@@ -160,17 +154,17 @@ def TrainAsHam(msgstore_message, manager, rescore = True, save_db = True):
 def TrainAsSpam(msgstore_message, manager, rescore = True, save_db = True):
     import train
     subject = msgstore_message.subject
-    print("Training on message '%s' in '%s - " % \
+    print "Training on message '%s' in '%s - " % \
             (subject,
-             msgstore_message.GetFolder().GetFQName()), end=' ')
+             msgstore_message.GetFolder().GetFQName()),
     if train.train_message(msgstore_message, True, manager.classifier_data):
-        print("trained as spam")
+        print "trained as spam"
         # Simplest way to rescore is to re-filter with all_actions = False
         if rescore:
             import filter
             filter.filter_message(msgstore_message, manager, all_actions = False)
     else:
-        print("already was trained as spam")
+        print "already was trained as spam"
     manager.classifier_data.message_db.load_msg(msgstore_message)
     assert train.been_trained_as_spam(msgstore_message)
     # And if the DB can save itself incrementally, do it now
@@ -221,20 +215,20 @@ def ProcessMessage(msgstore_message, manager):
             # get the foldername before the move operation!
             folder_name = msgstore_message.GetFolder().GetFQName()
             disposition = filter.filter_message(msgstore_message, manager)
-            print("Message '%s' in '%s' had a Spam classification of '%s'" \
+            print "Message '%s' in '%s' had a Spam classification of '%s'" \
                   % (msgstore_message.GetSubject(),
                      folder_name,
-                     disposition))
+                     disposition)
 
             manager.HandleNotification(disposition)
         else:
-            print("Spam filtering is disabled - ignoring new message")
+            print "Spam filtering is disabled - ignoring new message"
     except manager.message_store.NotFoundException:
         manager.LogDebug(1, "ProcessMessage had the message moved out from underneath us")
     manager.LogDebug(2, "ProcessMessage finished for", msgstore_message.subject)
 
 # Button/Menu and other UI event handler classes
-class ButtonEvent(object):
+class ButtonEvent:
     def Init(self, handler, *args):
         self.handler = handler
         self.args = args
@@ -246,9 +240,9 @@ class ButtonEvent(object):
         self.handler(*self.args)
 
 # Folder event handler classes
-class _BaseItemsEvent(object):
+class _BaseItemsEvent:
     def Init(self, target, application, manager):
-        self.owner_thread_ident = _thread.get_ident() # check we arent multi-threaded
+        self.owner_thread_ident = thread.get_ident() # check we arent multi-threaded
         self.application = application
         self.manager = manager
         self.target = target
@@ -267,17 +261,17 @@ class HamFolderItemsEvent(_BaseItemsEvent):
         interval = self.manager.config.filter.timer_interval
         use_timer = timer_enabled and start_delay and interval
         if timer_enabled and not use_timer:
-            print("*" * 50)
-            print("The timer is enabled, but one of the timer intervals values is zero")
-            print("You must set both intervals before the timer will enable")
+            print "*" * 50
+            print "The timer is enabled, but one of the timer intervals values is zero"
+            print "You must set both intervals before the timer will enable"
         if use_timer and not hasattr(timer, "__version__"):
             # No binaries will see this.
-            print("*" * 50)
-            print("SORRY: You have tried to enable the timer, but you have a")
-            print("leaky version of the 'timer' module.  These leaks prevent")
-            print("Outlook from shutting down.  Please update win32all to post 154")
-            print("The timer is NOT enabled...")
-            print("*" * 50)
+            print "*" * 50
+            print "SORRY: You have tried to enable the timer, but you have a"
+            print "leaky version of the 'timer' module.  These leaks prevent"
+            print "Outlook from shutting down.  Please update win32all to post 154"
+            print "The timer is NOT enabled..."
+            print "*" * 50
             use_timer = False
 
         if use_timer:
@@ -290,22 +284,22 @@ class HamFolderItemsEvent(_BaseItemsEvent):
         # Don't allow insane values for the timer.
         if use_timer:
             too = None
-            if not isinstance(start_delay, float) or \
-               not isinstance(interval, float):
-                print("*" * 50)
-                print("Timer values are garbage!", repr(start_delay), repr(interval))
+            if not isinstance(start_delay, types.FloatType) or \
+               not isinstance(interval, types.FloatType):
+                print "*" * 50
+                print "Timer values are garbage!", repr(start_delay), repr(interval)
                 use_timer = False
             elif start_delay < 0.4 or interval < 0.4:
                 too = "too often"
             elif start_delay > 60 or interval > 60:
                 too = "too infrequently"
             if too:
-                print("*" * 50)
-                print("The timer is configured to fire way " + too + \
+                print "*" * 50
+                print "The timer is configured to fire way " + too + \
                   " (delay=%s seconds, interval=%s seconds)" \
-                  % (start_delay, interval))
-                print("Please adjust your configuration.  The timer is NOT enabled...")
-                print("*" * 50)
+                  % (start_delay, interval)
+                print "Please adjust your configuration.  The timer is NOT enabled..."
+                print "*" * 50
                 use_timer = False
 
         self.use_timer = use_timer
@@ -321,9 +315,9 @@ class HamFolderItemsEvent(_BaseItemsEvent):
         self._KillTimer()
         _BaseItemsEvent.Close(self, *args)
     def _DoStartTimer(self, delay):
-        assert _thread.get_ident() == self.owner_thread_ident
+        assert thread.get_ident() == self.owner_thread_ident
         assert self.timer_id is None, "Shouldn't start a timer when already have one"
-        assert isinstance(delay, float), "Timer values are float seconds"
+        assert isinstance(delay, types.FloatType), "Timer values are float seconds"
         # And start a new timer.
         assert delay, "No delay means no timer!"
         delay = int(delay*1000) # convert to ms.
@@ -340,7 +334,7 @@ class HamFolderItemsEvent(_BaseItemsEvent):
         self._DoStartTimer(delay)
 
     def _KillTimer(self):
-        assert _thread.get_ident() == self.owner_thread_ident
+        assert thread.get_ident() == self.owner_thread_ident
         if self.timer_id is not None:
             timer.kill_timer(self.timer_id)
             self.manager.LogDebug(2, "The timer with id=%d was stopped" % self.timer_id)
@@ -348,7 +342,7 @@ class HamFolderItemsEvent(_BaseItemsEvent):
 
     def _TimerFunc(self, event, time):
         # Kill the timer first
-        assert _thread.get_ident() == self.owner_thread_ident
+        assert thread.get_ident() == self.owner_thread_ident
         self.manager.LogDebug(1, "The timer with id=%s fired" % self.timer_id)
         self._KillTimer()
         assert self.timer_generator, "Can't have a timer with no generator"
@@ -366,7 +360,7 @@ class HamFolderItemsEvent(_BaseItemsEvent):
             # If the Spam score *is* saved, the generator should only return
             # ones that HaveSeen() returns False for, so therefore isn't a hit.
             while 1:
-                item = next(self.timer_generator)
+                item = self.timer_generator.next()
                 try:
                     if not HaveSeenMessage(item, self.manager):
                         break
@@ -633,7 +627,7 @@ def CheckLatestVersion(manager):
         ver_latest = get_version(app_name, version_dict=latest)
         latest_ver_string = ver_latest.get_long_version(ADDIN_DISPLAY_NAME)
     except:
-        print("Error checking the latest version")
+        print "Error checking the latest version"
         traceback.print_exc()
         manager.ReportError(
             _("There was an error checking for the latest version\r\n"
@@ -642,7 +636,7 @@ def CheckLatestVersion(manager):
         )
         return
 
-    print("Current version is %s, latest is %s." % (str(ver_current), str(ver_latest)))
+    print "Current version is %s, latest is %s." % (str(ver_current), str(ver_latest))
     if ver_latest > ver_current:
         url = get_download_page(app_name, version_dict=latest)
         msg = _("You are running %s\r\n\r\nThe latest available version is %s" \
@@ -650,7 +644,7 @@ def CheckLatestVersion(manager):
                 "\r\n\r\nWould you like to visit this page now?") \
                 % (cur_ver_string, latest_ver_string, url)
         if manager.AskQuestion(msg):
-            print("Opening browser page", url)
+            print "Opening browser page", url
             os.startfile(url)
     else:
         msg = _("The latest available version is %s\r\n\r\n" \
@@ -664,16 +658,16 @@ def Tester(manager):
     # the test suite to save shutting down Outlook each time we tweak it.
     reload(tester)
     try:
-        print("Executing automated tests...")
+        print "Executing automated tests..."
         tester.test(manager)
     except:
         traceback.print_exc()
-        print("Tests FAILED.  Sorry about that.  If I were you, I would do a full re-train ASAP")
-        print("Please delete any test messages from your Spam, Unsure or Inbox/Watch folders first.")
+        print "Tests FAILED.  Sorry about that.  If I were you, I would do a full re-train ASAP"
+        print "Please delete any test messages from your Spam, Unsure or Inbox/Watch folders first."
 
 # The "Spam" and "Not Spam" buttons
 # The event from Outlook's explorer that our folder has changed.
-class ButtonDeleteAsEventBase(object):
+class ButtonDeleteAsEventBase:
     def Init(self, manager, explorer):
         self.manager = manager
         self.explorer = explorer
@@ -723,7 +717,7 @@ class ButtonDeleteAsSpamEvent(ButtonDeleteAsEventBase):
             msgstore_message.Save()
             # Must train before moving, else we lose the message!
             subject = msgstore_message.GetSubject()
-            print("Moving and spam training message '%s' - " % (subject,), end=' ')
+            print "Moving and spam training message '%s' - " % (subject,),
             TrainAsSpam(msgstore_message, self.manager, save_db = False)
             # Do the new message state if necessary.
             try:
@@ -733,9 +727,9 @@ class ButtonDeleteAsSpamEvent(ButtonDeleteAsEventBase):
                     msgstore_message.SetReadState(False)
                 else:
                     if new_msg_state not in ["", "None", None]:
-                        print("*** Bad new_msg_state value: %r" % (new_msg_state,))
+                        print "*** Bad new_msg_state value: %r" % (new_msg_state,)
             except pythoncom.com_error:
-                print("*** Failed to set the message state to '%s' for message '%s'" % (new_msg_state, subject))
+                print "*** Failed to set the message state to '%s' for message '%s'" % (new_msg_state, subject)
             # Now move it.
             msgstore_message.MoveToReportingError(self.manager, spam_folder)
             # Note the move will possibly also trigger a re-train
@@ -780,14 +774,14 @@ class ButtonRecoverFromSpamEvent(ButtonDeleteAsEventBase):
                 restore_folder = msgstore_message.GetRememberedFolder()
                 if restore_folder is None or \
                    msgstore_message.GetFolder() == restore_folder:
-                    print("Unable to determine source folder for message '%s' - restoring to Inbox" % (subject,))
+                    print "Unable to determine source folder for message '%s' - restoring to Inbox" % (subject,)
                     restore_folder = inbox_folder
 
                 # Record this recovery in our stats.
                 self.manager.stats.RecordTraining(True,
                                         self.manager.score(msgstore_message))
                 # Must train before moving, else we lose the message!
-                print("Recovering to folder '%s' and ham training message '%s' - " % (restore_folder.name, subject), end=' ')
+                print "Recovering to folder '%s' and ham training message '%s' - " % (restore_folder.name, subject),
                 TrainAsHam(msgstore_message, self.manager, save_db = False)
                 # Do the new message state if necessary.
                 try:
@@ -797,10 +791,10 @@ class ButtonRecoverFromSpamEvent(ButtonDeleteAsEventBase):
                         msgstore_message.SetReadState(False)
                     else:
                         if new_msg_state not in ["", "None", None]:
-                            print("*** Bad new_msg_state value: %r" % (new_msg_state,))
-                except msgstore.MsgStoreException as details:
-                    print("*** Failed to set the message state to '%s' for message '%s'" % (new_msg_state, subject))
-                    print(details)
+                            print "*** Bad new_msg_state value: %r" % (new_msg_state,)
+                except msgstore.MsgStoreException, details:
+                    print "*** Failed to set the message state to '%s' for message '%s'" % (new_msg_state, subject)
+                    print details
                 # Now move it.
                 msgstore_message.MoveToReportingError(self.manager, restore_folder)
             except msgstore.NotFoundException:
@@ -825,7 +819,7 @@ def SetButtonImage(button, fname, manager):
         elif fname=="delete_as_spam.bmp":
             bid = 6001
         else:
-            raise RuntimeError("What bitmap to use for '%s'?" % fname)
+            raise RuntimeError, "What bitmap to use for '%s'?" % fname
         handle = win32gui.LoadImage(sys.frozendllhandle, bid, win32con.IMAGE_BITMAP, 0, 0, win32con.LR_DEFAULTSIZE)
     else:
         if not os.path.isabs(fname):
@@ -833,7 +827,7 @@ def SetButtonImage(button, fname, manager):
             fname = os.path.join(manager.application_directory,
                                      "images", fname)
         if not os.path.isfile(fname):
-            print("WARNING - Trying to use image '%s', but it doesn't exist" % (fname,))
+            print "WARNING - Trying to use image '%s', but it doesn't exist" % (fname,)
             return None
         handle = win32gui.LoadImage(0, fname, win32con.IMAGE_BITMAP, 0, 0, win32con.LR_DEFAULTSIZE | win32con.LR_LOADFROMFILE)
     win32clipboard.OpenClipboard()
@@ -844,7 +838,7 @@ def SetButtonImage(button, fname, manager):
 
 # A class that manages an "Outlook Explorer" - that is, a top-level window
 # All UI elements are managed here, and there is one instance per explorer.
-class ExplorerWithEvents(object):
+class ExplorerWithEvents:
     def Init(self, manager, explorers_collection):
         self.manager = manager
         self.have_setup_ui = False
@@ -924,13 +918,13 @@ class ExplorerWithEvents(object):
                                     Type = constants.msoControlPopup,
                                     Tag = "SpamBayesCommand.Popup")
                     if item is None:
-                        print("ERROR: Could't re-find control to delete")
+                        print "ERROR: Could't re-find control to delete"
                         break
                     item.Delete(False)
-                    print("The above toolbar message is common - " \
-                          "recreating the toolbar...")
-                except pythoncom.com_error as e:
-                    print("ERROR: Failed to delete our dead toolbar control")
+                    print "The above toolbar message is common - " \
+                          "recreating the toolbar..."
+                except pythoncom.com_error, e:
+                    print "ERROR: Failed to delete our dead toolbar control"
                     break
                 # ok - toolbar deleted - just run around the loop again
                 continue
@@ -1033,7 +1027,7 @@ class ExplorerWithEvents(object):
         # elsewhere).  If we can not find the child control, we then try and
         # locate our toolbar, creating if necessary.  Our items get added to
         # that.
-        assert 'Tag' in item_attrs, "Need a 'Tag' attribute!"
+        assert item_attrs.has_key('Tag'), "Need a 'Tag' attribute!"
         image_fname = None
         if 'image' in item_attrs:
             image_fname = item_attrs['image']
@@ -1073,7 +1067,7 @@ class ExplorerWithEvents(object):
                     else:
                         # for not broken - can't find toolbar.  Create a new one.
                         # Create it as a permanent one (which is default)
-                        print("Creating new SpamBayes toolbar to host our buttons")
+                        print "Creating new SpamBayes toolbar to host our buttons"
                         self.toolbar = bars.Add(toolbar_name,
                                                 constants.msoBarTop,
                                                 Temporary=False)
@@ -1082,10 +1076,10 @@ class ExplorerWithEvents(object):
             # Now add the item itself to the parent.
             try:
                 item = parent.Controls.Add(Type=control_type, Temporary=temporary)
-            except pythoncom.com_error as e:
+            except pythoncom.com_error, e:
                 # Toolbars seem to still fail randomly for some users.
                 # eg, bug [ 755738 ] Latest CVS outllok doesn't work
-                print("FAILED to add the toolbar item '%s' - %s" % (tag,e))
+                print "FAILED to add the toolbar item '%s' - %s" % (tag,e)
                 return
             if image_fname:
                 # Eeek - only available in derived class.
@@ -1093,7 +1087,7 @@ class ExplorerWithEvents(object):
                 but = CastTo(item, "_CommandBarButton")
                 SetButtonImage(but, image_fname, self.manager)
             # Set the extra attributes passed in.
-            for attr, val in list(item_attrs.items()):
+            for attr, val in item_attrs.items():
                 setattr(item, attr, val)
         # didn't previously set this, and it seems to fix alot of problem - so
         # we set it for every object, even existing ones.
@@ -1128,10 +1122,10 @@ class ExplorerWithEvents(object):
                     ret.append(msgstore_message)
             except ms.NotFoundException:
                 pass
-            except ms.MsgStoreException as details:
-                print("Unexpected error fetching message")
+            except ms.MsgStoreException, details:
+                print "Unexpected error fetching message"
                 traceback.print_exc()
-                print(details)
+                print details
 
         if len(ret) == 0:
             self.manager.ReportError(_("No filterable mail items are selected"),
@@ -1203,7 +1197,7 @@ class ExplorerWithEvents(object):
                         show_recover_as = True
                         show_delete_as = True
             except:
-                print("Error finding the MAPI folders for a folder switch event")
+                print "Error finding the MAPI folders for a folder switch event"
                 # As this happens once per move, we should only display it once.
                 self.manager.ReportErrorOnce(_(
                     "There appears to be a problem with the SpamBayes"
@@ -1226,7 +1220,7 @@ class ExplorerWithEvents(object):
             self.SetupUI()
 
 # Events from our "Explorers" collection (not an Explorer instance)
-class ExplorersEvent(object):
+class ExplorersEvent:
     def Init(self, manager):
         assert manager
         self.manager = manager
@@ -1249,7 +1243,7 @@ class ExplorersEvent(object):
         if len(self.explorers)==0:
             # No more explorers - disconnect all events.
             # (not doing this causes shutdown problems)
-            for tag, button in list(self.button_event_map.items()):
+            for tag, button in self.button_event_map.items():
                 closer = getattr(button, "Close", None)
                 if closer is not None:
                     closer()
@@ -1268,7 +1262,7 @@ class ExplorersEvent(object):
         self._DoNewExplorer(explorer)
 
 # The outlook Plugin COM object itself.
-class OutlookAddin(object):
+class OutlookAddin:
     _com_interfaces_ = ['_IDTExtensibility2']
     _public_methods_ = []
     _reg_clsctx_ = pythoncom.CLSCTX_INPROC_SERVER
@@ -1301,13 +1295,13 @@ class OutlookAddin(object):
             v = get_current_version()
             vstring = v.get_long_version(ADDIN_DISPLAY_NAME)
             if not hasattr(sys, "frozen"): vstring += " from source"
-            print(vstring)
+            print vstring
             major, minor, spack, platform, ver_str = win32api.GetVersionEx()
-            print("on Windows %d.%d.%d (%s)" % \
-                  (major, minor, spack, ver_str))
-            print("using Python", sys.version)
+            print "on Windows %d.%d.%d (%s)" % \
+                  (major, minor, spack, ver_str)
+            print "using Python", sys.version
             from time import asctime, localtime
-            print("Log created", asctime(localtime()))
+            print "Log created", asctime(localtime())
 
             self.explorers_events = None # create at OnStartupComplete
 
@@ -1317,7 +1311,7 @@ class OutlookAddin(object):
                 # bootstrap code that can't happen until startup is complete.
                 self.OnStartupComplete(None)
         except:
-            print("Error connecting to Outlook!")
+            print "Error connecting to Outlook!"
             traceback.print_exc()
             # We can't translate this string, as we haven't managed to load
             # the translation tools.
@@ -1352,7 +1346,7 @@ class OutlookAddin(object):
             try:
                 self.ProcessMissedMessages()
             except:
-                print("Error processing missed messages!")
+                print "Error processing missed messages!"
                 traceback.print_exc()
         else:
             # We should include this fact in the log, as I suspect a
@@ -1391,8 +1385,8 @@ class OutlookAddin(object):
                     "Skipping processing of missed messages in folder '%s', "
                     "as it is not available" % folder.name)
             elif event_hook.use_timer:
-                print("Processing missed spam in folder '%s' by starting a timer" \
-                      % (folder.name,))
+                print "Processing missed spam in folder '%s' by starting a timer" \
+                      % (folder.name,)
                 event_hook._StartTimer()
             else:
                 num = 0
@@ -1401,8 +1395,8 @@ class OutlookAddin(object):
                     ProcessMessage(message, manager)
                     num += 1
                 # See if perf hurts anyone too much.
-                print("Processing %d missed spam in folder '%s' took %gms" \
-                      % (num, folder.name, (clock()-start)*1000))
+                print "Processing %d missed spam in folder '%s' took %gms" \
+                      % (num, folder.name, (clock()-start)*1000)
 
     def FiltersChanged(self):
         try:
@@ -1421,7 +1415,7 @@ class OutlookAddin(object):
             except:
                 # If this fails, just log an error - don't bother with
                 # the traceback
-                print("Error adding field to 'Unsure' folder %r" % (unsure_id,))
+                print "Error adding field to 'Unsure' folder %r" % (unsure_id,)
                 etype, value, tb = sys.exc_info()
                 tb = None # dont want it, and nuke circular ref
                 traceback.print_exception(etype, value, tb)
@@ -1444,8 +1438,8 @@ class OutlookAddin(object):
                                        SpamFolderItemsEvent,
                                        "incremental training")
                 )
-        for k in list(self.folder_hooks.keys()):
-            if k not in new_hooks:
+        for k in self.folder_hooks.keys():
+            if not new_hooks.has_key(k):
                 self.folder_hooks[k].Close()
         self.folder_hooks = new_hooks
 
@@ -1465,7 +1459,7 @@ class OutlookAddin(object):
                 name = msgstore_folder.GetFQName()
                 try:
                     folder = msgstore_folder.GetOutlookItem()
-                except self.manager.message_store.MsgStoreException as details:
+                except self.manager.message_store.MsgStoreException, details:
                     # Exceptions here are most likely when the folder is valid
                     # and available to MAPI, but not via the Outlook.
                     # One good way to provoke this is to configure Outlook's
@@ -1473,9 +1467,9 @@ class OutlookAddin(object):
                     # when you start Outlook, it immediately displays an
                     # error and terminates.  During this process, the addin
                     # is initialized, attempts to get the folders, and fails.
-                    print("FAILED to open the Outlook folder '%s' " \
-                          "to hook events" % name)
-                    print(details)
+                    print "FAILED to open the Outlook folder '%s' " \
+                          "to hook events" % name
+                    print details
                     continue
                 # Ensure the field is created before we hook the folder
                 # events, else there is a chance our event handler will
@@ -1487,8 +1481,8 @@ class OutlookAddin(object):
                     # 'spam' field is not fatal, nor really even worth
                     # telling the user about, nor even worth a traceback
                     # (as it is likely a COM error).
-                    print("ERROR: Failed to check folder '%s' for " \
-                          "Spam field" % name)
+                    print "ERROR: Failed to check folder '%s' for " \
+                          "Spam field" % name
                     etype, value, tb = sys.exc_info()
                     tb = None # dont want it, and nuke circular ref
                     traceback.print_exception(etype, value, tb)
@@ -1496,21 +1490,21 @@ class OutlookAddin(object):
                 try:
                     new_hook = DispatchWithEvents(folder.Items, HandlerClass)
                 except ValueError:
-                    print("WARNING: Folder '%s' can not hook events" % (name,))
+                    print "WARNING: Folder '%s' can not hook events" % (name,)
                     new_hook = None
                 if new_hook is not None:
                     new_hook.Init(msgstore_folder, self.application, self.manager)
                     new_hooks[msgstore_folder.id] = new_hook
-                    print("SpamBayes: Watching (for %s) in '%s'" % (what, name))
+                    print "SpamBayes: Watching (for %s) in '%s'" % (what, name)
             else:
                 new_hooks[msgstore_folder.id] = existing
                 existing.ReInit()
         return new_hooks
 
     def OnDisconnection(self, mode, custom):
-        print("SpamBayes - Disconnecting from Outlook")
+        print "SpamBayes - Disconnecting from Outlook"
         if self.folder_hooks:
-            for hook in list(self.folder_hooks.values()):
+            for hook in self.folder_hooks.values():
                 hook.Close()
             self.folder_hooks = None
         if self.explorers_events is not None:
@@ -1523,10 +1517,10 @@ class OutlookAddin(object):
             # it (ie, the dialog)
             self.manager.Save()
             # Report some simple stats, for session, and for total.
-            print("Session:")
-            print("\r\n".join(self.manager.stats.GetStats(session_only=True)))
-            print("Total:")
-            print("\r\n".join(self.manager.stats.GetStats()))
+            print "Session:"
+            print "\r\n".join(self.manager.stats.GetStats(session_only=True))
+            print "Total:"
+            print "\r\n".join(self.manager.stats.GetStats())
             self.manager.Close()
             self.manager = None
 
@@ -1534,7 +1528,7 @@ class OutlookAddin(object):
             # The user has de-selected us.  Remove the toolbars we created
             # (Maybe we can exploit this later to remove toolbars as part
             # of uninstall?)
-            print("SpamBayes is being manually disabled - deleting toolbar")
+            print "SpamBayes is being manually disabled - deleting toolbar"
             try:
                 explorers = self.application.Explorers
                 for i in range(explorers.Count):
@@ -1542,22 +1536,22 @@ class OutlookAddin(object):
                     try:
                         toolbar = explorer.CommandBars.Item(toolbar_name)
                     except pythoncom.com_error:
-                        print("Could not find our toolbar to delete!")
+                        print "Could not find our toolbar to delete!"
                     else:
                         toolbar.Delete()
             except:
-                print("ERROR deleting toolbar")
+                print "ERROR deleting toolbar"
                 traceback.print_exc()
 
         self.application = None
 
-        print("Addin terminating: %d COM client and %d COM servers exist." \
-              % (pythoncom._GetInterfaceCount(), pythoncom._GetGatewayCount()))
+        print "Addin terminating: %d COM client and %d COM servers exist." \
+              % (pythoncom._GetInterfaceCount(), pythoncom._GetGatewayCount())
         try:
             # will be available if "python_d addin.py" is used to
             # register the addin.
             total_refs = sys.gettotalrefcount() # debug Python builds only
-            print("%d Python references exist" % (total_refs,))
+            print "%d Python references exist" % (total_refs,)
         except AttributeError:
             pass
 
@@ -1568,13 +1562,13 @@ class OutlookAddin(object):
         pass
 
 def _DoRegister(klass, root):
-    key = winreg.CreateKey(root,
+    key = _winreg.CreateKey(root,
                             "Software\\Microsoft\\Office\\Outlook\\Addins")
-    subkey = winreg.CreateKey(key, klass._reg_progid_)
-    winreg.SetValueEx(subkey, "CommandLineSafe", 0, winreg.REG_DWORD, 0)
-    winreg.SetValueEx(subkey, "LoadBehavior", 0, winreg.REG_DWORD, 3)
-    winreg.SetValueEx(subkey, "Description", 0, winreg.REG_SZ, "SpamBayes anti-spam tool")
-    winreg.SetValueEx(subkey, "FriendlyName", 0, winreg.REG_SZ, "SpamBayes")
+    subkey = _winreg.CreateKey(key, klass._reg_progid_)
+    _winreg.SetValueEx(subkey, "CommandLineSafe", 0, _winreg.REG_DWORD, 0)
+    _winreg.SetValueEx(subkey, "LoadBehavior", 0, _winreg.REG_DWORD, 3)
+    _winreg.SetValueEx(subkey, "Description", 0, _winreg.REG_SZ, "SpamBayes anti-spam tool")
+    _winreg.SetValueEx(subkey, "FriendlyName", 0, _winreg.REG_SZ, "SpamBayes")
 
 # Note that Addins can be registered either in HKEY_CURRENT_USER or
 # HKEY_LOCAL_MACHINE.  If the former, then:
@@ -1600,8 +1594,8 @@ def DllInstall(bInstall, cmdline):
         DllUnregisterServer()
         # Don't catch exceptions here - if it fails, the Dll registration
         # must fail.
-        _DoRegister(klass, winreg.HKEY_LOCAL_MACHINE)
-        print("Registration (in HKEY_LOCAL_MACHINE) complete.")
+        _DoRegister(klass, _winreg.HKEY_LOCAL_MACHINE)
+        print "Registration (in HKEY_LOCAL_MACHINE) complete."
 
 def DllRegisterServer():
     klass = OutlookAddin
@@ -1610,26 +1604,26 @@ def DllRegisterServer():
     # remove the HKLM registration here (but it can be re-added - see the
     # notes above.)
     try:
-        winreg.DeleteKey(winreg.HKEY_LOCAL_MACHINE,
+        _winreg.DeleteKey(_winreg.HKEY_LOCAL_MACHINE,
                           "Software\\Microsoft\\Office\\Outlook\\Addins\\" \
                           + klass._reg_progid_)
     except WindowsError:
         pass
-    _DoRegister(klass, winreg.HKEY_CURRENT_USER)
-    print("Registration complete.")
+    _DoRegister(klass, _winreg.HKEY_CURRENT_USER)
+    print "Registration complete."
 
 def DllUnregisterServer():
     klass = OutlookAddin
     # Try to remove the HKLM version.
     try:
-        winreg.DeleteKey(winreg.HKEY_LOCAL_MACHINE,
+        _winreg.DeleteKey(_winreg.HKEY_LOCAL_MACHINE,
                           "Software\\Microsoft\\Office\\Outlook\\Addins\\" \
                           + klass._reg_progid_)
     except WindowsError:
         pass
     # and again for current user.
     try:
-        winreg.DeleteKey(winreg.HKEY_CURRENT_USER,
+        _winreg.DeleteKey(_winreg.HKEY_CURRENT_USER,
                           "Software\\Microsoft\\Office\\Outlook\\Addins\\" \
                           + klass._reg_progid_)
     except WindowsError:

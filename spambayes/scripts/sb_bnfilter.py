@@ -76,22 +76,21 @@ Where:
         terminate this server after this many requests
 
 """
-from __future__ import print_function
 
 import sys, getopt, socket, errno, os, time
 
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__, file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__
     sys.exit(code)
         
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hfgstGSd:p:o:a:A:k:')
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(2, msg)
 
     # build the default socket filename from environment variables
@@ -152,8 +151,8 @@ def main():
     # tries to handle errors internally by constructing a stdout that is
     # the same as stdin was.
     if total_size != expected_size:
-        print('size mismatch %d != %d' % (total_size,
-                                                         expected_size), file=sys.stderr)
+        print >> sys.stderr, 'size mismatch %d != %d' % (total_size,
+                                                         expected_size)
         sys.exit(3)
     if error:
         sys.exit(error)
@@ -165,7 +164,7 @@ def make_socket(server_options, filename):
         try:
             s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
             s.connect(filename)
-        except socket.error as e:
+        except socket.error,e:
             if e[0] == errno.EAGAIN:
                 # baaah
                 pass

@@ -23,7 +23,6 @@ I don't know if the bundling of the files in the Mail directory
 would effect this script or not, and can't be bothered finding
 out right now).
 """
-from __future__ import print_function
 
 import os
 import sys
@@ -34,9 +33,9 @@ from spambayes.Options import options
 def usage(code, msg=''):
     """Print usage message and sys.exit(code)."""
     if msg:
-        print(msg, file=sys.stderr)
-        print(file=sys.stderr)
-    print(__doc__ % globals(), file=sys.stderr)
+        print >> sys.stderr, msg
+        print >> sys.stderr
+    print >> sys.stderr, __doc__ % globals()
     sys.exit(code)
 
 def emlx_to_rfc2822(in_fn, out_fn):
@@ -110,12 +109,12 @@ def export_directory(parent, dirname, exclude, quiet):
                 if not quiet:
                     sys.stdout.write('.')
     if not quiet:
-        print()
+        print
 
 def main():
     try:
         opts, args = getopt.getopt(sys.argv[1:], 'hqe:o:')
-    except getopt.error as msg:
+    except getopt.error, msg:
         usage(1, msg)
 
     quiet = False

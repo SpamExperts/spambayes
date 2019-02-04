@@ -1,4 +1,3 @@
-from __future__ import print_function
 # extract_bad_msg_from_log.py
 
 import sys
@@ -6,7 +5,7 @@ import sys
 def main(argv = None):
     if argv is None: argv = sys.argv
     if len(argv) < 2:
-        print("Need log filename")
+        print "Need log filename"
         return
     f = open(argv[1])
     trigger = "FAILED to create email.message from:  "
@@ -15,7 +14,7 @@ def main(argv = None):
         if line.startswith(trigger):
             msg_repr = line[len(trigger):]
             if msg_repr[0] not in quotes or msg_repr[-2] not in quotes:
-                print("eeek - not a string repr!")
+                print "eeek - not a string repr!"
                 return
             msg_str = eval(msg_repr)
             # damn it - stderr in text mode

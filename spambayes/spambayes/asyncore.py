@@ -45,10 +45,7 @@ control than multi-threaded programming. The module documented here solves
 many of the difficult problems for you, making the task of building
 sophisticated high-performance network servers and clients a snap.
 """
-from __future__ import print_function
 
-from builtins import str
-from builtins import object
 import select
 import socket
 import sys
@@ -108,7 +105,7 @@ def poll(timeout=0.0, map=None):
         map = socket_map
     if map:
         r = []; w = []; e = []
-        for fd, obj in list(map.items()):
+        for fd, obj in map.items():
             is_r = obj.readable()
             is_w = obj.writable()
             if is_r:
@@ -122,7 +119,7 @@ def poll(timeout=0.0, map=None):
         else:
             try:
                 r, w, e = select.select(r, w, e, timeout)
-            except select.error as err:
+            except select.error, err:
                 if err[0] != EINTR:
                     raise
                 else:
@@ -155,7 +152,7 @@ def poll2(timeout=0.0, map=None):
         timeout = int(timeout*1000)
     pollster = select.poll()
     if map:
-        for fd, obj in list(map.items()):
+        for fd, obj in map.items():
             flags = 0
             if obj.readable():
                 flags |= select.POLLIN | select.POLLPRI
@@ -168,7 +165,7 @@ def poll2(timeout=0.0, map=None):
                 pollster.register(fd, flags)
         try:
             r = pollster.poll(timeout)
-        except select.error as err:
+        except select.error, err:
             if err[0] != EINTR:
                 raise
             r = []
@@ -198,7 +195,7 @@ def loop(timeout=30.0, use_poll=False, map=None, count=None):
             poll_fun(timeout, map)
             count = count - 1
 
-class dispatcher(object):
+class dispatcher:
 
     debug = False
     connected = False
@@ -250,7 +247,7 @@ class dispatcher(object):
         fd = self._fileno
         if map is None:
             map = self._map
-        if fd in map:
+        if map.has_key(fd):
             #self.log_info('closing channel %d:%s' % (fd, self))
             del map[fd]
         self._fileno = None
@@ -316,14 +313,14 @@ class dispatcher(object):
             self.connected = True
             self.handle_connect()
         else:
-            raise socket.error(err, errorcode[err])
+            raise socket.error, (err, errorcode[err])
 
     def accept(self):
         # XXX can return either an address pair or None
         try:
             conn, addr = self.socket.accept()
             return conn, addr
-        except socket.error as why:
+        except socket.error, why:
             if why[0] == EWOULDBLOCK:
                 pass
             else:
@@ -333,7 +330,7 @@ class dispatcher(object):
         try:
             result = self.socket.send(data)
             return result
-        except socket.error as why:
+        except socket.error, why:
             if why[0] == EWOULDBLOCK:
                 return 0
             else:
@@ -350,7 +347,7 @@ class dispatcher(object):
                 return ''
             else:
                 return data
-        except socket.error as why:
+        except socket.error, why:
             # winsock sometimes throws ENOTCONN
             if why[0] in [ECONNRESET, ENOTCONN, ESHUTDOWN]:
                 self.handle_close()
@@ -376,7 +373,7 @@ class dispatcher(object):
 
     def log_info(self, message, type='info'):
         if __debug__ or type != 'info':
-            print('%s: %s' % (type, message))
+            print '%s: %s' % (type, message)
 
     def handle_read_event(self):
         if self.accepting:
@@ -495,7 +492,7 @@ def compact_traceback():
 def close_all(map=None):
     if map is None:
         map = socket_map
-    for x in list(map.values()):
+    for x in map.values():
         x.socket.close()
     map.clear()
 
@@ -515,7 +512,7 @@ def close_all(map=None):
 if os.name == 'posix':
     import fcntl
 
-    class file_wrapper(object):
+    class file_wrapper:
         # here we override just enough to make a file
         # look like a socket for the purposes of asyncore.
 
