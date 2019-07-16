@@ -25,7 +25,20 @@ import sys
 import glob
 import email
 import mailbox
-import email.Message
+try:
+    import email.message
+except ImportError:
+    # Handle Python 2.4
+    import email.Message as email_message
+    email.message = email_message
+    del email_message
+try:
+    import email.errors
+except ImportError:
+    # Handle Python 2.4
+    import email.Errors as email_errors
+    email.errors = email_errors
+    del email_errors
 import re
 import traceback
 
@@ -35,51 +48,52 @@ class DirOfTxtFileMailbox:
     If the filename ends with ".emlx", assumes that the file is an
     RFC-822 message wrapped in Apple Mail's proprietory .emlx format.
     The emlx format is simply the length of the message (as a string
-    on the first line, then the raw message text, then the contents of
+    on the first line), then the raw message text, then the contents of
     a plist (XML) file that contains data that Mail uses (subject,
-    flags, sender, and so forth).  We ignore this plist data).
-    
+    flags, sender, and so forth).  We ignore this plist data.
+
     Subdirectories are traversed recursively.
     """
 
-    def __init__(self, dirname, factory):
+    def __init__(self, dirname, factory, reversed=False):
         self.names = glob.glob(os.path.join(dirname, "*"))
         self.names.sort()
+        if reversed:
+            self.names.reverse()
         self.factory = factory
 
     def __iter__(self):
         for name in self.names:
             if os.path.isdir(name):
-                for mbox in DirOfTxtFileMailbox(name, self.factory):
+                for mbox in DirOfTxtFileMailbox(name, self.factory,
+                                                reversed):
                     yield mbox
             elif os.path.splitext(name)[1] == ".emlx":
                 f = open(name)
                 length = int(f.readline().rstrip())
-                yield self.factory(f.read(length))
+                msg = self.factory(f.read(length))
+                msg["X-Filename"] = name
+                yield msg
                 f.close()
             else:
                 try:
                     f = open(name)
                 except IOError:
                     continue
-                yield self.factory(f)
+                msg = self.factory(f)
+                msg["X-Filename"] = name
+                yield msg
                 f.close()
 
-def full_messages(msgs):
-    """A generator that transforms each message by calling its
-    get_full_message() method.  Used for IMAP messages since they don't really
-    have their content by default.
-    """
-    for x in msgs:
-        yield x.get_full_message()
-    
 def _cat(seqs):
     for seq in seqs:
         for item in seq:
             yield item
 
-def getmbox(name):
+def getmbox(name, reversed=False):
     """Return an mbox iterator given a file/directory/folder name."""
+
+    # XXX Only DirOfTxtFileMailbox currently supports reversed.
 
     if name == "-":
         return [get_message(sys.stdin)]
@@ -106,47 +120,16 @@ def getmbox(name):
         else:
             return _cat(mboxes)
 
-    elif name.startswith(":"):
-        # IMAP mailbox name:
-        #   :username:password@server:folder1,...folderN
-        #   :username:password@server:port:folder1,...folderN
-        #   :username:password@server:ALL
-        #   :username:password@server:port:ALL
-        parts = re.compile(
-':(?P<user>[^@:]+):(?P<pwd>[^@]+)@(?P<server>[^:]+(:[0-9]+)?):(?P<name>[^:]+)'
-        ).match(name).groupdict()
-        
-        from scripts.sb_imapfilter import IMAPSession, IMAPFolder
-        from spambayes import Stats, message
-        from spambayes.Options import options
-        
-        session = IMAPSession(parts['server'])
-        session.login(parts['user'], parts['pwd'])
-        folder_list = session.folder_list()
-        
-        if name == "ALL":
-            names = folder_list
-        else:
-            names = parts['name'].split(',')
-
-        message_db = message.Message().message_info_db
-        stats = Stats.Stats(options, message_db)
-        mboxes = [IMAPFolder(n, session, stats) for n in names]
-        
-        if len(mboxes) == 1:
-            return full_messages(mboxes[0])
-        else:
-            return _cat([full_messages(x) for x in mboxes])
-        
     if os.path.isdir(name):
         # XXX Bogus: use a Maildir if /cur is a subdirectory, else a MHMailbox
-        # if the pathname contains /Mail/, else a DirOfTxtFileMailbox.
+        # if the pathname contains /Mail/ and this is not OS X, else a
+        # DirOfTxtFileMailbox.
         if os.path.exists(os.path.join(name, 'cur')):
             mbox = mailbox.Maildir(name, get_message)
-        elif name.find("/Mail/") >= 0:
+        elif name.find("/Mail/") >= 0 and sys.platform != "darwin":
             mbox = mailbox.MHMailbox(name, get_message)
         else:
-            mbox = DirOfTxtFileMailbox(name, get_message)
+            mbox = DirOfTxtFileMailbox(name, get_message, reversed)
     else:
         fp = open(name, "rb")
         mbox = mailbox.PortableUnixMailbox(fp, get_message)
@@ -162,7 +145,7 @@ def get_message(obj):
     the email package is used to create a Message object from it.  This
     can fail if the message is malformed.  In that case, the headers
     (everything through the first blank line) are thrown out, and the
-    rest of the text is wrapped in a bare email.Message.Message.
+    rest of the text is wrapped in a bare email.message.Message.
 
     Note that we can't use our own message class here, because this
     function is imported by tokenizer, and our message class imports
@@ -171,20 +154,20 @@ def get_message(obj):
     shouldn't matter.
     """
 
-    if isinstance(obj, email.Message.Message):
+    if isinstance(obj, email.message.Message):
         return obj
     # Create an email Message object.
     if hasattr(obj, "read"):
         obj = obj.read()
     try:
         msg = email.message_from_string(obj)
-    except email.Errors.MessageParseError:
+    except email.errors.MessageParseError:
         # Wrap the raw text in a bare Message object.  Since the
         # headers are most likely damaged, we can't use the email
         # package to parse them, so just get rid of them first.
         headers = extract_headers(obj)
         obj = obj[len(headers):]
-        msg = email.Message.Message()
+        msg = email.message.Message()
         msg.set_payload(obj)
     return msg
 
@@ -195,7 +178,7 @@ def as_string(msg, unixfrom=False):
     TypeError for some malformed messages.  This catches that and attempts
     to return something approximating the original message.
 
-    To Do: This really should be done by subclassing email.Message.Message
+    To Do: This really should be done by subclassing email.message.Message
     and making this function the as_string() method.  After 1.0.
 
     [Tony] Better: sb_filter & sb_mboxtrain should stop using this and
@@ -268,6 +251,9 @@ def extract_headers(text):
         text = ""
     return text
 
+def _test():
+    import doctest, mboxutils
+    return doctest.testmod(mboxutils)
+
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod()
+    _test()

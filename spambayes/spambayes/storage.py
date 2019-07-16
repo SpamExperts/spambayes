@@ -54,18 +54,31 @@ __author__ = ("Neale Pickett <neale@woozle.org>,"
               "Tim Stone <tim@fourstonesExpressions.com>")
 __credits__ = "All the spambayes contributors."
 
+try:
+    True, False
+except NameError:
+    # Maintain compatibility with Python 2.2
+    True, False = 1, 0
+    def bool(val):
+        return not not val
+
 import os
 import sys
 import time
 import types
-import tempfile
-from spambayes import classifier
-from spambayes.Options import options, get_pathname_option
 import errno
 import shelve
+import hashlib
+import tempfile
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
+
+from spambayes import classifier
+from spambayes.Options import options, get_pathname_option
 from spambayes import cdb
 from spambayes import dbmstorage
-from spambayes.safepickle import pickle_write, pickle_read
 
 # Make shelve use binary pickles by default.
 oldShelvePickler = shelve.Pickler
@@ -98,16 +111,20 @@ class PickledClassifier(classifier.Classifier):
         # tempbayes object is reclaimed when load() returns.
 
         if options["globals", "verbose"]:
-            print >> sys.stderr, 'Loading state from', self.db_name, 'pickle'
+            print >> sys.stderr, 'Loading state from',self.db_name,'pickle'
 
+        tempbayes = None
         try:
-            tempbayes = pickle_read(self.db_name)
-        except:
-            tempbayes = None
+            fp = open(self.db_name, 'rb')
+        except IOError, e:
+            if e.errno != errno.ENOENT: raise
+        else:
+            tempbayes = pickle.load(fp)
+            fp.close()
 
         if tempbayes:
             # Copy state from tempbayes.  The use of our base-class
-            # __setstate__ is forced, in case self is of a subclass of
+            # __state__ is forced, in case self is of a subclass of
             # PickledClassifier that overrides __setstate__.
             classifier.Classifier.__setstate__(self,
                                                tempbayes.__getstate__())
@@ -127,9 +144,33 @@ class PickledClassifier(classifier.Classifier):
         '''Store self as a pickle'''
 
         if options["globals", "verbose"]:
-            print >> sys.stderr, 'Persisting', self.db_name, 'as a pickle'
+            print >> sys.stderr, 'Persisting',self.db_name,'as a pickle'
 
-        pickle_write(self.db_name, self, PICKLE_TYPE)
+        # Be as defensive as possible; keep always a safe copy.
+        tmp = self.db_name + '.tmp'
+        try:
+            fp = open(tmp, 'wb')
+            pickle.dump(self, fp, PICKLE_TYPE)
+            fp.close()
+        except IOError, e:
+            if options["globals", "verbose"]:
+                print >> sys.stderr, 'Failed update: ' + str(e)
+            if fp is not None:
+                os.remove(tmp)
+            raise
+        try:
+            # With *nix we can just rename, and (as long as permissions
+            # are correct) the old file will vanish.  With win32, this
+            # won't work - the Python help says that there may not be
+            # a way to do an atomic replace, so we rename the old one,
+            # put the new one there, and then delete the old one.  If
+            # something goes wrong, there is at least a copy of the old
+            # one.
+            os.rename(tmp, self.db_name)
+        except OSError:
+            os.rename(self.db_name, self.db_name + '.bak')
+            os.rename(tmp, self.db_name)
+            os.remove(self.db_name + '.bak')
 
     def close(self):
         # we keep no resources open - nothing to do
@@ -139,6 +180,9 @@ class PickledClassifier(classifier.Classifier):
 WORD_DELETED = "D"
 WORD_CHANGED = "C"
 
+# This must never be a valid token.  Note that this would not be the token
+# from a bigram of "saved" and "state", because the bigrams are prefixed
+# with "bi:".
 STATE_KEY = 'saved state'
 
 class DBDictClassifier(classifier.Classifier):
@@ -169,13 +213,13 @@ class DBDictClassifier(classifier.Classifier):
         if hasattr(self, "dbm"):
             del self.dbm
         if options["globals", "verbose"]:
-            print >> sys.stderr, 'Closed', self.db_name, 'database'
+            print >> sys.stderr, 'Closed',self.db_name,'database'
 
     def load(self):
         '''Load state from database'''
 
         if options["globals", "verbose"]:
-            print >> sys.stderr, 'Loading state from', self.db_name, 'database'
+            print >> sys.stderr, 'Loading state from',self.db_name,'database'
 
         self.dbm = dbmstorage.open(self.db_name, self.mode)
         self.db = shelve.Shelf(self.dbm)
@@ -203,8 +247,7 @@ class DBDictClassifier(classifier.Classifier):
         '''Place state into persistent store'''
 
         if options["globals", "verbose"]:
-            print >> sys.stderr, 'Persisting', self.db_name,
-            print >> sys.stderr, 'state in database'
+            print >> sys.stderr, 'Persisting',self.db_name,'state in database'
 
         # Iterate over our changed word list.
         # This is *not* thread-safe - another thread changing our
@@ -300,12 +343,13 @@ class DBDictClassifier(classifier.Classifier):
 
 
 class SQLClassifier(classifier.Classifier):
-    def __init__(self, db_name):
+    def __init__(self, db_name, tbl_name="bayes"):
         '''Constructor(database name)'''
 
         classifier.Classifier.__init__(self)
         self.statekey = STATE_KEY
         self.db_name = db_name
+        self.tbl_name = tbl_name
         self.load()
 
     def close(self):
@@ -344,8 +388,7 @@ class SQLClassifier(classifier.Classifier):
         '''Return row matching word'''
         try:
             c = self.cursor()
-            c.execute("select * from bayes"
-                      "  where word=%s",
+            c.execute("select * from `%s` where word=%%s" % self.tbl_name,
                       (word,))
         except Exception, e:
             print >> sys.stderr, "error:", (e, word)
@@ -360,28 +403,28 @@ class SQLClassifier(classifier.Classifier):
     def _set_row(self, word, nspam, nham):
         c = self.cursor()
         if self._has_key(word):
-            c.execute("update bayes"
-                      "  set nspam=%s,nham=%s"
-                      "  where word=%s",
+            c.execute("update `%s`"
+                      "  set nspam=%%s,nham=%%s"
+                      "  where word=%%s" % self.tbl_name,
                       (nspam, nham, word))
         else:
-            c.execute("insert into bayes"
+            c.execute("insert into `%s`"
                       "  (nspam, nham, word)"
-                      "  values (%s, %s, %s)",
+                      "  values (%%s, %%s, %%s)" % self.tbl_name,
                       (nspam, nham, word))
         self.commit(c)
 
     def _delete_row(self, word):
         c = self.cursor()
-        c.execute("delete from bayes"
-                  "  where word=%s",
+        c.execute("delete from `%s`"
+                  "  where word=%%s" % self.tbl_name,
                   (word,))
         self.commit(c)
 
     def _has_key(self, key):
         c = self.cursor()
-        c.execute("select word from bayes"
-                  "  where word=%s",
+        c.execute("select word from `%s`"
+                  "  where word=%%s" % self.tbl_name,
                   (key,))
         return len(self.fetchall(c)) > 0
 
@@ -409,7 +452,7 @@ class SQLClassifier(classifier.Classifier):
 
     def _wordinfokeys(self):
         c = self.cursor()
-        c.execute("select word from bayes")
+        c.execute("select word from `%s`" % self.tbl_name)
         rows = self.fetchall(c)
         return [r[0] for r in rows]
 
@@ -431,7 +474,7 @@ class PGClassifier(SQLClassifier):
     def fetchall(self, c):
         return c.dictfetchall()
 
-    def commit(self, _c):
+    def commit(self, c):
         self.db.commit()
 
     def load(self):
@@ -440,13 +483,13 @@ class PGClassifier(SQLClassifier):
         import psycopg
 
         if options["globals", "verbose"]:
-            print >> sys.stderr, 'Loading state from', self.db_name, 'database'
+            print >> sys.stderr, 'Loading state from',self.db_name,'database'
 
-        self.db = psycopg.connect('dbname=' + self.db_name)
+        self.db = psycopg.connect(self.db_name)
 
         c = self.cursor()
         try:
-            c.execute("select count(*) from bayes")
+            c.execute("select count(*) from `%s`" % self.tbl_name)
         except psycopg.ProgrammingError:
             self.db.rollback()
             self.create_bayes()
@@ -467,24 +510,32 @@ class PGClassifier(SQLClassifier):
             self.nham = 0
 
 
-class mySQLClassifier(SQLClassifier):
+class mySQLClassifier(classifier.Classifier):
     '''Classifier object persisted in a mySQL database
 
     It is assumed that the database already exists, and that the mySQL
     server is currently running.'''
 
-    def __init__(self, data_source_name):
-        self.table_definition = ("create table bayes ("
-                                 "  word varchar(255) not null default '',"
-                                 "  nspam integer not null default 0,"
-                                 "  nham integer not null default 0,"
-                                 "  primary key(word)"
-                                 ");")
+    table_template = (
+        "CREATE TABLE IF NOT EXISTS `%s` ("
+        "  word varchar(255) not null default '',"
+        "  nspam integer not null default 0,"
+        "  nham integer not null default 0,"
+        "  primary key(word)"
+        ") charset=utf8 collate=utf8_bin;"
+        "INSERT INTO `%s` (word, nspam, nham) VALUES "
+        "('%s', 0, 0)"
+    )
+
+    statekey = STATE_KEY
+
+    def __init__(self, data_source_name, mode="c"):
         self.host = "localhost"
         self.username = "root"
         self.password = ""
-        db_name = "spambayes"
-        self.charset = None
+        self.mode = mode
+        self.db_name = "spambayes"
+        self.tbl_name = "bayes"
         source_info = data_source_name.split()
         for info in source_info:
             if info.startswith("host"):
@@ -494,74 +545,245 @@ class mySQLClassifier(SQLClassifier):
             elif info.startswith("pass"):
                 self.password = info[5:]
             elif info.startswith("dbname"):
-                db_name = info[7:]
-            elif info.startswith("charset"):
-                self.charset = info[8:]
-        SQLClassifier.__init__(self, db_name)
+                self.db_name = info[7:]
+            elif info.startswith("tblname"):
+                self.tbl_name = info[8:]
+        self.probcache = {}
+        self.cache = {}
+        self._nham = None
+        self._nspam = None
+        self.load()
+        # We don't call the parent, because nham/nspam are properties and
+        # we don't want to have the value in the database set to 0.
 
-    def cursor(self):
-        return self.db.cursor()
-
-    def fetchall(self, c):
-        return c.fetchall()
-
-    def commit(self, _c):
-        self.db.commit()
+    def __getstate__(self):
+        """There is nothing much to pickle here - everything is loaded on
+        demand."""
+        raise AttributeError()
+    def __setstate__(self, state):
+        """There is nothing much to pickle here - everything is loaded on
+        demand."""
+        raise AttributeError()
 
     def load(self):
-        '''Load state from database'''
+        """Load state from database.
 
+        Actually, we leave the state all in the database, and access it
+        on-demand.  Here we just check/ensure that the database exists.
+        """
         import MySQLdb
 
         if options["globals", "verbose"]:
-            print >> sys.stderr, 'Loading state from', self.db_name, 'database'
+            print >> sys.stderr, 'Loading state from %s database' % \
+                self.db_name
 
-        params = {
-          'host': self.host, 'db': self.db_name,
-          'user': self.username, 'passwd': self.password,
-          'charset': self.charset
-        }
-        self.db = MySQLdb.connect(**params)
+        self.db = MySQLdb.connect(host=self.host, db=self.db_name,
+                                  user=self.username, passwd=self.password)
 
-        c = self.cursor()
+        c = self.db.cursor()
         try:
-            c.execute("select count(*) from bayes")
+            c.execute("SELECT 1 FROM `%s` LIMIT 0" % self.tbl_name)
         except MySQLdb.ProgrammingError:
-            try:
-                self.db.rollback()
-            except MySQLdb.NotSupportedError:
-                # Server doesn't support rollback, so just assume that
-                # we can keep going and create the db.  This should only
-                # happen once, anyway.
-                pass
-            self.create_bayes()
-
-        if self._has_key(self.statekey):
-            row = self._get_row(self.statekey)
-            self.nspam = int(row[1])
-            self.nham = int(row[2])
-            if options["globals", "verbose"]:
-                print >> sys.stderr, ('%s is an existing database,'
-                                      ' with %d spam and %d ham') \
-                      % (self.db_name, self.nspam, self.nham)
+            if self.mode == "c":
+                table_definition = (self.table_template %
+                    (self.tbl_name, self.tbl_name, self.statekey))
+                c.execute(table_definition)
+                if options["globals", "verbose"]:
+                    print >> sys.stderr, self.db_name, 'is a new database'
+            else:
+                raise IOError("Database does not exist.")
         else:
-            # new database
             if options["globals", "verbose"]:
-                print >> sys.stderr, self.db_name,'is a new database'
-            self.nspam = 0
-            self.nham = 0
+                print >> sys.stderr, '%s is an existing database' \
+                    % self.db_name
+        c.close()
 
-    def _wordinfoget(self, word):
-        if isinstance(word, unicode):
-            word = word.encode("utf-8")
+    def store(self):
+        '''We store whenever we add/remove a message.'''
+        pass
 
-        row = self._get_row(word)
-        if row:
+    def close(self):
+        """Release all database resources."""
+        self.db.close()
+
+    def _add_msg(self, wordstream, is_spam):
+        """Add the tokens from the wordstream to the database, or if they
+        are already present, increment their spam count.
+
+        Rather than inserting rows one at a time into the database
+        (which works fine with an in-memory dictionary, but not so well
+        with MySQL), update all of the rows at once."""
+        # Nuke the prob cache.
+        self.probcache = {}
+        if is_spam:
+            field = "nspam"
+        else:
+            field = "nham"
+        wordstream = self._preprocessed_wordstream(wordstream)
+        wordstream.insert(0, (self.statekey, ))
+        # Use a relative query (column+1) not an absolute one (column=X), so
+        # that it doesn't matter if multiple queries are executing at the
+        # same time (i.e. we are thread/process-safe). During the update
+        # the database is in a slightly inconsistent state, but if the
+        # storage engine supports transactions, then this is done in a
+        # single transaction, and so the state is always consistent.
+        c = self.db.cursor()
+        c.executemany("INSERT INTO `%s` (word, %s) VALUES (%%s, 1) "
+                      "ON DUPLICATE KEY UPDATE %s=%s+1" %
+                      (self.tbl_name, field, field, field),
+                      tuple(wordstream))
+        self.db.commit()
+        c.close()
+        self._post_training()
+
+    def _remove_msg(self, wordstream, is_spam):
+        """Decrease the spam count of the tokens in the wordstream.
+
+        Rather than inserting rows one at a time into the database
+        (which works fine with an in-memory dictionary, but not so well
+        with MySQL), update all of the rows at once."""
+        # Nuke the prob cache.
+        self.probcache = {}
+        if is_spam:
+            if self.nspam <= 0:
+                raise ValueError("spam count would go negative!")
+            field = "nspam"
+        else:
+            if self.nham <= 0:
+                raise ValueError("non-spam count would go negative!")
+            field = "nham"
+        wordstream = self._preprocessed_wordstream(wordstream)
+        wordstream.insert(0, (self.statekey, ))
+        c = self.db.cursor()
+        c.executemany("UPDATE `%s` SET %s=%s-1 WHERE word=%%s" %
+                      (self.tbl_name, field, field), tuple(wordstream))
+        # In an effort to keep the database small, we trim any entries
+        # where the count for both ham and spam is zero.
+        c.execute("DELETE FROM `%s` WHERE nspam=0 AND nham=0" %
+                  (self.tbl_name))
+        self.db.commit()
+        c.close()
+        self._post_training()
+
+    def _wordinfokeys(self):
+        import MySQLdb.cursors
+        c = self.db.cursor(cursorclass=MySQLdb.cursors.SSCursor)
+        c.execute("SELECT word FROM `%s`" % self.tbl_name)
+        while True:
+            row = c.fetchone()
+            if not row:
+                break
+            yield row[0]
+        c.close()
+
+    def _getclues(self, wordstream):
+        """Wraps the parent, getting all the necessary data from the
+        database in a single query, rather than a very large number of small
+        queries.
+
+        What we are doing is loading all the state we need from the database
+        in a single shot, so that the performance after this is equal to the
+        performance of the original in-memory dict.
+        """
+        import MySQLdb.cursors
+        # Nuke any previous values.
+        self.cache = {}
+        # Note that we are collapsing the generator here, so the memory
+        # consumption will be higher - but we don't want to have duplicate
+        # tokens in the query because that's likely to be more expensive -
+        # and we would have to collapse the generator in order to create
+        # the query anyway.
+        wordstream = self._preprocessed_wordstream(wordstream)
+        wordstream.insert(0, self.statekey)
+        c = self.db.cursor(cursorclass=MySQLdb.cursors.SSCursor)
+        # This query is likely to be pretty long, so it assumes that
+        # max_query_length will be set appropriately.
+        c.execute("SELECT word, nspam, nham FROM `%s` WHERE word IN (%s)" %
+                  (self.tbl_name, ",".join(("%s",) * len(wordstream))),
+                  tuple(wordstream))
+        counts = set()
+        while True:
+            row = c.fetchone()
+            if not row:
+                break
+            word, nspam, nham = row
+            if word == self.statekey:
+                self._nham = nham
+                self._nspam = nspam
+            else:
+                counts.add((word, nspam, nham))
+        for word, nspam, nham in counts:
             item = self.WordInfoClass()
-            item.__setstate__((row[1], row[2]))
-            return item
-        else:
-            return None
+            item.__setstate__((nspam, nham))
+            prob = self.probability(item)
+            self.cache[word] = abs(prob - 0.5), prob, word, item
+        c.close()
+        # Provide the cache keys as the wordstream.  This saves tee'ing the
+        # wordstream earlier (since it is a generator, we exhausted it
+        # above).
+        return classifier.Classifier._getclues(self, self.cache)
+
+    def _preprocessed_wordstream(self, wordstream):
+        """Do any needed preprocessing to the tokens, before using them
+        with the database.
+        
+        1. Remove any duplicates.
+        2. Strip any trailing whitespace (which MySQL would ignore).
+        """
+        wordstream = list(classifier.Set(
+            [(word.rstrip(),) for word in classifier.Set(wordstream)]))
+        return wordstream
+
+    # We know that these are only used after a _getclues() call for the
+    # same dataset as these will be used with, so it's safe to completely
+    # rely on the cache.
+    nham = property(lambda self : self._nham or 0)
+    nspam = property(lambda self : self._nspam or 0)
+    _worddistanceget = lambda self, word : self.cache.get(
+        word, (abs(options["Classifier", "unknown_word_prob"] - 0.5),
+               options["Classifier", "unknown_word_prob"], word, None))
+
+
+class HashedMySQLClassifier(mySQLClassifier):
+    """Classifier object persisted in a MySQL or MariaDB database.
+
+    All tokens are stored as SHA256 hashes. This ensures consistency of row
+    size and provides anonymity of the data in the tokens.
+
+    It is assumed that the MySQL or MariaDB server is currently running."""
+
+    table_template = (
+        "CREATE TABLE IF NOT EXISTS `%s` ("
+        "  word binary(32) not null default '',"
+        "  nspam integer not null default 0,"
+        "  nham integer not null default 0,"
+        "  primary key(word)"
+        ");"
+        "INSERT INTO `%s` (word, nspam, nham) VALUES "
+        "('%s', 0, 0)"
+    )
+
+    # For selects to work properly, the value needs to be 32 bytes long.    
+    statekey = (
+        "saved state"
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+        "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
+
+    def _preprocessed_wordstream(self, wordstream):
+        """Do any needed preprocessing to the tokens, before using them
+        with the database.
+        
+        1. Remove any duplicates.
+        2. Strip any trailing whitespace (which MySQL would ignore).
+        3. Convert to a SHA256 hash.
+        """
+        # XXX This could be much more efficient in modern Python.
+        # XXX Probably, it's time we can drop support for 2.2!
+        sha = hashlib.sha256
+        return list(classifier.Set([
+            (sha(word.rstrip()).digest(), )
+            for word in wordstream
+        ]))
 
 
 class CDBClassifier(classifier.Classifier):
@@ -684,14 +906,10 @@ class ZODBClassifier(object):
             object.__setattr__(self, att, value)
 
     def create_storage(self):
+        import ZODB
         from ZODB.FileStorage import FileStorage
-        try:
-            self.storage = FileStorage(self.db_filename,
-                                       read_only=self.mode=='r')
-        except IOError:
-            print >> sys.stderr, ("Could not create FileStorage from",
-                                  self.db_filename)
-            raise
+        self.storage = FileStorage(self.db_filename,
+                                   read_only=self.mode=='r')
 
     def load(self):
         '''Load state from database'''
@@ -727,6 +945,7 @@ class ZODBClassifier(object):
     def store(self):
         '''Place state into persistent store'''
         try:
+            import ZODB
             import ZODB.Transaction
         except ImportError:
             import transaction
@@ -736,13 +955,10 @@ class ZODBClassifier(object):
             commit = ZODB.Transaction.get_transaction().commit
             abort = ZODB.Transaction.get_transaction().abort
         from ZODB.POSException import ConflictError
-        try:
-            from ZODB.POSException import TransactionFailedError
-        except:
-            from ZODB.POSException import TransactionError as TransactionFailedError
         from ZODB.POSException import ReadOnlyError
+        from ZODB.POSException import TransactionFailedError
 
-        assert not self.closed, "Can't store a closed database"
+        assert self.closed == False, "Can't store a closed database"
 
         if options["globals", "verbose"]:
             print >> sys.stderr, 'Persisting', self.db_name, 'state in database'
@@ -778,11 +994,10 @@ class ZODBClassifier(object):
         # We don't make any use of the 'undo' capabilities of the
         # FileStorage at the moment, so might as well pack the database
         # each time it is closed, to save as much disk space as possible.
-        # Pack it up to where it was 'yesterday'.
         if pack and self.mode != 'r':
-            self.pack(time.time()-60*60*24, retain_backup)
+            self.pack(time.time(), retain_backup)
 
-        # Do the closing.        
+        # Do the closing.
         self.DB.close()
         self.storage.close()
 
@@ -805,10 +1020,11 @@ class ZODBClassifier(object):
             old_name = self.db_filename + ".old"
             if os.path.exists(old_name):
                 os.remove(old_name)
+        self.store()
 
 
 class ZEOClassifier(ZODBClassifier):
-    def __init__(self, data_source_name):
+    def __init__(self, data_source_name, mode='c'):
         source_info = data_source_name.split()
         self.host = "localhost"
         self.port = None
@@ -840,7 +1056,7 @@ class ZEOClassifier(ZODBClassifier):
                 self.wait_timeout = int(info[13:])
             elif info.startswith("wait"):
                 self.wait = info[5:] == "True"
-        ZODBClassifier.__init__(self, db_name)
+        ZODBClassifier.__init__(self, db_name, mode)
 
     def create_storage(self):
         from ZEO.ClientStorage import ClientStorage
@@ -865,7 +1081,7 @@ class ZEOClassifier(ZODBClassifier):
                                          storage=self.storage_name,
                                          var=tempfile.gettempdir(),
                                          password=self.password)
-        except ValueError:
+        except (ValueError, IOError):
             # Probably bad cache; remove it and try without the cache.
             try:
                 os.remove(os.path.join(tempfile.gettempdir(),
@@ -883,6 +1099,99 @@ class ZEOClassifier(ZODBClassifier):
 
     def is_connected(self):
         return self.storage.is_connected()
+
+
+class RedisClassifier(classifier.Classifier):
+    '''Classifier object stored in a redis store.'''
+
+    def __init__(self, data_source_name, mode="c"):
+        # We deliberately do not call the parent __init__, because it sets
+        # nham and nspam, which we treat as read-only.
+        self.wordinfo = {}
+        self.probcache = {}
+        self.host = "localhost"
+        self.port = 6379
+        self.mode = mode
+        self.db_number = 0
+        source_info = data_source_name.split()
+        for info in source_info:
+            if info.startswith("host"):
+                self.host = info[5:]
+            elif info.startswith("port"):
+                self.port = int(info[5:])
+            elif info.startswith("db"):
+                self.db_number = int(info[3:])
+        self.load()
+
+    def load(self):
+        """Connect to the database."""
+        import redis
+        self.db = redis.StrictRedis(host=self.host, port=self.port,
+                                    db=self.db_number)
+
+    def store(self):
+        """Store the database on disk."""
+        # We persist as we go.
+        pass
+
+    def close(self):
+        """Close the database."""
+        # We don't need to explicitly close, just allow the db to be
+        # garbage collected.
+        self.db = None
+
+    # These are read-only, because the only time they can be updated is
+    # when a complete message is added or removed (the methods for those
+    # actions ensure that the database is updated appropriately).
+    @property
+    def nham(self):
+        return self.db.get(STATE_KEY + " nham")
+    @property
+    def nspam(self):
+        return self.db.get(STATE_KEY + "nspam")
+
+    def _add_msg(self, wordstream, is_spam):
+        """Increase the counts for each word in the stream."""
+        assert self.mode != "r"
+        self.probcache = {}    # nuke the prob cache
+        if is_spam:
+            field = " nspam"
+        else:
+            field = " nham"
+        pipe = self.db.pipeline()
+        pipe.incr(STATE_KEY + field)
+        for word in classifier.Set(wordstream):
+            pipe.incr(word + field)
+        # We ignore the response, since we are not getting anything.
+        pipe.execute()
+        self._post_training()
+
+    def _remove_msg(self, wordstream, is_spam):
+        """Decrease the counts for each word in the stream."""
+        assert self.mode != "r"
+        self.probcache = {}    # nuke the prob cache
+        if is_spam:
+            field = " nspam"
+        else:
+            field = " nham"
+        pipe = self.db.pipeline()
+        pipe.decr(STATE_KEY + field)
+        for word in classifier.Set(wordstream):
+            pipe.decr(word + field)
+        # We ignore the response, since we are not getting anything.
+        pipe.execute()
+        self._post_training()
+
+    def _wordinfoget(self, word):
+        pipe = self.db.pipeline()
+        pipe.get(word + " nham")
+        pipe.get(word + " nspam")
+        nham, nspam = pipe.execute()
+        if nham or nspam:
+            item = self.WordInfoClass()
+            item.__setstate__((nspam, nham))
+            return item
+        return None
 
 
 # Flags that the Trainer will recognise.  These should be or'able integer
@@ -929,7 +1238,7 @@ class Trainer(object):
         '''Untrain the database with the message'''
 
         if options["globals", "verbose"]:
-            print >> sys.stderr, 'untraining with', message.key()
+            print >> sys.stderr, 'untraining with',message.key()
 
         self.bayes.unlearn(message.tokenize(), self.is_spam)
 #                           self.updateprobs)
@@ -963,7 +1272,6 @@ class HamTrainer(Trainer):
 
 class NoSuchClassifierError(Exception):
     def __init__(self, invalid_name):
-        Exception.__init__(self, invalid_name)
         self.invalid_name = invalid_name
     def __str__(self):
         return repr(self.invalid_name)
@@ -977,20 +1285,25 @@ class MutuallyExclusiveError(Exception):
 _storage_types = {"dbm" : (DBDictClassifier, True, True),
                   "pickle" : (PickledClassifier, False, True),
                   "pgsql" : (PGClassifier, False, False),
-                  "mysql" : (mySQLClassifier, False, False),
+                  "mysql" : (mySQLClassifier, True, False),
+                  "mysql_hashed": (HashedMySQLClassifier, True, False),
                   "cdb" : (CDBClassifier, False, True),
                   "zodb" : (ZODBClassifier, True, True),
-                  "zeo" : (ZEOClassifier, False, False),
+                  "zeo" : (ZEOClassifier, True, False),
+                  "redis" : (RedisClassifier, True, False),
                   }
 
-def open_storage(data_source_name, db_type="dbm", mode=None):
+def open_storage(data_source_name, db_type="dbm", mode=None,
+                 storage_types=None):
     """Return a storage object appropriate to the given parameters.
 
     By centralizing this code here, all the applications will behave
     the same given the same options.
     """
+    if not storage_types:
+        storage_types = _storage_types
     try:
-        klass, supports_mode, unused = _storage_types[db_type]
+        klass, supports_mode, unused = storage_types[db_type]
     except KeyError:
         raise NoSuchClassifierError(db_type)
     try:
@@ -1047,7 +1360,7 @@ def database_type(opts, default_type=("Storage", "persistent_use_database"),
         try:
             unused, unused, is_path = _storage_types[typ]
         except KeyError:
-            raise NoSuchClassifierError(typ)
+            raise NoSuchClassifierError(db_type)
         if is_path:
             nm = get_pathname_option(*default_name)
         else:
@@ -1101,7 +1414,7 @@ def ensureDir(dirname):
     try:
         os.mkdir(dirname)
         if options["globals", "verbose"]:
-            print >> sys.stderr, "Creating directory", dirname
+            print >>sys.stderr, "Creating directory", dirname
     except OSError, e:
         if e.errno != errno.EEXIST:
             raise

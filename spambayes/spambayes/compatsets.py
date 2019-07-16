@@ -56,7 +56,14 @@ what's tested is actually `z in y'.
 #   improvements.
 
 
-__all__ = ['BaseSet', 'Set', 'ImmutableSet']
+__all__ = ('BaseSet', 'Set', 'ImmutableSet')
+
+
+try:
+    True, False
+except NameError:
+    # Maintain compatibility with Python 2.2
+    True, False = 1, 0
 
 
 class BaseSet(object):

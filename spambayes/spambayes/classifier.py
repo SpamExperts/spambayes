@@ -38,6 +38,17 @@ from __future__ import generators
 # This implementation is due to Tim Peters et alia.
 
 import math
+try:
+    # We have three possibilities for Set:
+    #  (a) With Python 2.2 and earlier, we use our compatsets class
+    #  (b) With Python 2.3, we use the sets.Set class
+    #  (c) With Python 2.4 and later, we use the builtin set class
+    Set = set
+except NameError:
+    try:
+        from sets import Set
+    except ImportError:
+        from spambayes.compatsets import Set
 
 # XXX At time of writing, these are only necessary for the
 # XXX experimental url retrieving/slurping code.  If that
@@ -47,8 +58,18 @@ import re
 import os
 import sys
 import socket
+import pickle
 import urllib2
 from email import message_from_string
+
+try:
+    enumerate
+except NameError:
+    def enumerate(seq):
+        i = 0
+        for elt in seq:
+            yield (i, elt)
+            i += 1
 
 DOMAIN_AND_PORT_RE = re.compile(r"([^:/\\]+)(:([\d]+))?")
 HTTP_ERROR_RE = re.compile(r"HTTP Error ([\d]+)")
@@ -57,7 +78,13 @@ URL_KEY_RE = re.compile(r"[\W]")
 
 from spambayes.Options import options
 from spambayes.chi2 import chi2Q
-from spambayes.safepickle import pickle_read, pickle_write
+
+try:
+    True, False
+except NameError:
+    # Maintain compatibility with Python 2.2
+    True, False = 1, 0
+
 
 LN2 = math.log(2)       # used frequently by chi-combining
 
@@ -155,7 +182,7 @@ class Classifier:
         # spam.  The sum-of-the-logs business is more sensitive to probs
         # near 0 than to probs near 1, so the spam measure uses 1-p (so
         # that high-spamprob words have greatest effect), and the ham
-        # measure uses p directly (so that lo-spamprob words have greatest
+        # measure uses p directly (so that low-spamprob words have greatest
         # effect).
         #
         # For optimization, sum-of-logs == log-of-product, and f.p.
@@ -199,8 +226,10 @@ class Classifier:
             prob = 0.5
 
         if evidence:
-            clues = [(w, p) for p, w, _r in clues]
+            clues = [(w, p) for p, w, r in clues]
             clues.sort(lambda a, b: cmp(a[1], b[1]))
+            clues.insert(0, ('*SPAMCOUNT*', self.nspam))
+            clues.insert(0, ('*HAMCOUNT*', self.nham))
             clues.insert(0, ('*S*', S))
             clues.insert(0, ('*H*', H))
             return prob, clues
@@ -223,7 +252,7 @@ class Classifier:
         if len(clues) < options["Classifier", "max_discriminators"] and \
            prob > h_cut and prob < s_cut and slurp_wordstream:
             slurp_tokens = list(self._generate_slurp())
-            slurp_tokens.extend([w for (w, _p) in clues])
+            slurp_tokens.extend([w for (w,p) in clues])
             sprob, sclues = self.chi2_spamprob(slurp_tokens, True)
             if sprob < h_cut or sprob > s_cut:
                 prob = sprob
@@ -284,10 +313,14 @@ class Classifier:
         nham = float(self.nham or 1)
         nspam = float(self.nspam or 1)
 
-        assert hamcount <= nham, "Token seen in more ham than ham trained."
+        assert hamcount <= nham, \
+            "Token seen in more ham (%s) than ham trained (%s)" % (hamcount,
+                                                                   nham)
         hamratio = hamcount / nham
 
-        assert spamcount <= nspam, "Token seen in more spam than spam trained."
+        assert spamcount <= nspam, \
+            "Token seen in more spam (%s) than spam trained (%s)" % (spamcount,
+                                                                     nspam)
         spamratio = spamcount / nspam
 
         prob = spamratio / (hamratio + spamratio)
@@ -350,7 +383,7 @@ class Classifier:
         else:
             self.nham += 1
 
-        for word in set(wordstream):
+        for word in Set(wordstream):
             record = self._wordinfoget(word)
             if record is None:
                 record = self.WordInfoClass()
@@ -375,7 +408,7 @@ class Classifier:
                 raise ValueError("non-spam count would go negative!")
             self.nham -= 1
 
-        for word in set(wordstream):
+        for word in Set(wordstream):
             record = self._wordinfoget(word)
             if record is not None:
                 if is_spam:
@@ -407,6 +440,7 @@ class Classifier:
     # aren't returned.
     def _getclues(self, wordstream):
         mindist = options["Classifier", "minimum_prob_strength"]
+        limit = options["Tokenizer", "max_token_length"]
 
         if options["Classifier", "use_bigrams"]:
             # This scheme mixes single tokens with pairs of adjacent tokens.
@@ -427,16 +461,20 @@ class Classifier:
             push = raw.append
             pair = None
             # Keep track of which tokens we've already seen.
-            # Don't use a set here!  This is an innermost loop, so speed is
+            # Don't use a Set here!  This is an innermost loop, so speed is
             # important here (direct dict fiddling is much quicker than
-            # invoking Python-level set methods; in Python 2.4 that will
+            # invoking Python-level Set methods; in Python 2.4 that will
             # change).
             seen = {pair: 1} # so the bigram token is skipped on 1st loop trip
             for i, token in enumerate(wordstream):
                 if i:   # not the 1st loop trip, so there is a preceding token
                     # This string interpolation must match the one in
                     # _enhance_wordstream().
-                    pair = "bi:%s %s" % (last_token, token)
+                    if limit:
+                        pair = "bi:%s %s" % (last_token[:limit // 2],
+                                             token[:(limit // 2) - 3])
+                    else:
+                        pair = "bi:%s %s" % (last_token, token)
                 last_token = token
                 for clue, indices in (token, (i,)), (pair, (i-1, i)):
                     if clue not in seen:    # as always, skip duplicates
@@ -464,11 +502,11 @@ class Classifier:
             clues.reverse()
 
         else:
-            # The all-unigram scheme just scores the tokens as-is.  A set()
+            # The all-unigram scheme just scores the tokens as-is.  A Set()
             # is used to weed out duplicates at high speed.
             clues = []
             push = clues.append
-            for word in set(wordstream):
+            for word in Set(wordstream):
                 tup = self._worddistanceget(word)
                 if tup[0] >= mindist:
                     push(tup)
@@ -489,13 +527,31 @@ class Classifier:
         return distance, prob, word, record
 
     def _wordinfoget(self, word):
-        return self.wordinfo.get(word)
+        try:
+            return self.wordinfo.get(word)
+        except UnicodeDecodeError:
+            # XXX This is not right way to do this, but it should always
+            # XXX work and we have tried too many things so far - we just
+            # XXX need it working for now.
+            return self.wordinfo.get(repr(word))
 
     def _wordinfoset(self, word, record):
-        self.wordinfo[word] = record
+        try:
+            self.wordinfo[word] = record
+        except UnicodeDecodeError:
+            # XXX This is not right way to do this, but it should always
+            # XXX work and we have tried too many things so far - we just
+            # XXX need it working for now.
+            self.wordinfo[repr(word)] = record
 
     def _wordinfodel(self, word):
-        del self.wordinfo[word]
+        try:
+            del self.wordinfo[word]
+        except UnicodeDecodeError:
+            # XXX This is not right way to do this, but it should always
+            # XXX work and we have tried too many things so far - we just
+            # XXX need it working for now.
+            del self.wordinfo[repr(word)]
 
     def _enhance_wordstream(self, wordstream):
         """Add bigrams to the wordstream.
@@ -515,6 +571,7 @@ class Classifier:
         If the "Classifier":"use_bigrams" option is removed, this function
         can be removed, too.
         """
+        limit = options["Tokenizer", "max_token_length"]
 
         last = None
         for token in wordstream:
@@ -522,7 +579,11 @@ class Classifier:
             if last:
                 # This string interpolation must match the one in
                 # _getclues().
-                yield "bi:%s %s" % (last, token)
+                if limit:
+                    yield "bi:%s %s" % (last[:limit // 2],
+                                        token[:(limit // 2) - 3])
+                else:
+                    yield "bi:%s %s" % (last, token)
             last = token
 
     def _generate_slurp(self):
@@ -534,8 +595,11 @@ class Classifier:
         if not hasattr(self, "do_slurp") or self.do_slurp:
             if slurp_wordstream:
                 self.do_slurp = False
-
-                tokens = self.slurp(*slurp_wordstream)
+                try:
+                    tokens = self.slurp(*slurp_wordstream)
+                except (IOError, AttributeError):
+                    # File couldn't be saved?
+                    tokens = []
                 self.do_slurp = True
                 self._save_caches()
                 return tokens
@@ -575,7 +639,7 @@ class Classifier:
         if not os.path.exists(dir):
             # Create the directory.
             if options["globals", "verbose"]:
-                print >> sys.stderr, "Creating URL cache directory"
+                print >>sys.stderr, "Creating URL cache directory"
             os.makedirs(dir)
 
         self.urlCorpus = ExpiryFileCorpus(age, FileMessageFactory(),
@@ -587,16 +651,18 @@ class Classifier:
         self.bad_url_cache_name = os.path.join(dir, "bad_urls.pck")
         self.http_error_cache_name = os.path.join(dir, "http_error_urls.pck")
         if os.path.exists(self.bad_url_cache_name):
+            b_file = file(self.bad_url_cache_name, "r")
             try:
-                self.bad_urls = pickle_read(self.bad_url_cache_name)
-            except (IOError, ValueError):
+                self.bad_urls = pickle.load(b_file)
+            except IOError, ValueError:
                 # Something went wrong loading it (bad pickle,
                 # probably).  Start afresh.
                 if options["globals", "verbose"]:
-                    print >> sys.stderr, "Bad URL pickle, using new."
+                    print >>sys.stderr, "Bad URL pickle, using new."
                 self.bad_urls = {"url:non_resolving": (),
                                  "url:non_html": (),
                                  "url:unknown_error": ()}
+            b_file.close()
         else:
             if options["globals", "verbose"]:
                 print "URL caches don't exist: creating"
@@ -604,14 +670,16 @@ class Classifier:
                         "url:non_html": (),
                         "url:unknown_error": ()}
         if os.path.exists(self.http_error_cache_name):
+            h_file = file(self.http_error_cache_name, "r")
             try:
-                self.http_error_urls = pickle_read(self.http_error_cache_name)
-            except (IOError, ValueError):
+                self.http_error_urls = pickle.load(h_file)
+            except IOError, ValueError:
                 # Something went wrong loading it (bad pickle,
                 # probably).  Start afresh.
                 if options["globals", "verbose"]:
-                    print >> sys.stderr, "Bad HHTP error pickle, using new."
+                    print >>sys.stderr, "Bad HHTP error pickle, using new."
                 self.http_error_urls = {}
+            h_file.close()
         else:
             self.http_error_urls = {}
 
@@ -621,7 +689,17 @@ class Classifier:
         # XXX becomes valid, for example).
         for name, data in [(self.bad_url_cache_name, self.bad_urls),
                            (self.http_error_cache_name, self.http_error_urls),]:
-            pickle_write(name, data)
+            # Save to a temp file first, in case something goes wrong.
+            cache = open(name + ".tmp", "w")
+            pickle.dump(data, cache)
+            cache.close()
+            try:
+                os.rename(name + ".tmp", name)
+            except OSError:
+                # Atomic replace isn't possible with win32, so just
+                # remove and rename.
+                os.remove(name)
+                os.rename(name + ".tmp", name)
 
     def slurp(self, proto, url):
         # We generate these tokens:
@@ -641,13 +719,13 @@ class Classifier:
         # "http://)" will trigger this.
         if not url:
             return ["url:non_resolving"]
-        
+
         from spambayes.tokenizer import Tokenizer
 
         if options["URLRetriever", "x-only_slurp_base"]:
             url = self._base_url(url)
 
-        # Check the unretrievable caches
+        # Check the irretrievable caches
         for err in self.bad_urls.keys():
             if url in self.bad_urls[err]:
                 return [err]
@@ -662,8 +740,8 @@ class Classifier:
         else:
             port = mo.group(3)
         try:
-            _unused = socket.getaddrinfo(domain, port)
-        except socket.error:
+            not_used = socket.getaddrinfo(domain, port)
+        except (socket.error, UnicodeError):
             self.bad_urls["url:non_resolving"] += (url,)
             return ["url:non_resolving"]
 
@@ -673,13 +751,17 @@ class Classifier:
         cached_message = self.urlCorpus.get(url_key)
 
         if cached_message is None:
-            # We're going to ignore everything that isn't text/html,
-            # so we might as well not bother retrieving anything with
-            # these extensions.
-            parts = url.split('.')
-            if parts[-1] in ('jpg', 'gif', 'png', 'css', 'js'):
-                self.bad_urls["url:non_html"] += (url,)
-                return ["url:non_html"]
+            # Lazily import this, because just importing uses multiple MB
+            # of memory, which is wasteful when it's only needed here to
+            # catch an exception.
+            import httplib
+##            # We're going to ignore everything that isn't text/html,
+##            # so we might as well not bother retrieving anything with
+##            # these extensions.
+##            parts = url.split('.')
+##            if parts[-1] in ('jpg', 'gif', 'png', 'css', 'js'):
+##                self.bad_urls["url:non_html"] += (url,)
+##                return ["url:non_html"]
 
             # Waiting for the default timeout period slows everything
             # down far too much, so try and reduce it for just this
@@ -692,9 +774,13 @@ class Classifier:
                 pass
             try:
                 if options["globals", "verbose"]:
-                    print >> sys.stderr, "Slurping", url
+                    try:
+                        print >>sys.stderr, "Slurping", url
+                    except UnicodeEncodeError:
+                        raise urllib2.URLError("HTTP Error 000")
                 f = urllib2.urlopen("%s://%s" % (proto, url))
-            except (urllib2.URLError, socket.error), details:
+            except (urllib2.URLError, socket.error, httplib.error,
+                    UnicodeEncodeError), details:
                 mo = HTTP_ERROR_RE.match(str(details))
                 if mo:
                     self.http_error_urls[url] = "url:http_" + mo.group(1)
@@ -709,21 +795,21 @@ class Classifier:
                 pass
 
             try:
-                # Anything that isn't text/html is ignored
-                content_type = f.info().get('content-type')
-                if content_type is None or \
-                   not content_type.startswith("text/html"):
-                    self.bad_urls["url:non_html"] += (url,)
-                    return ["url:non_html"]
+##                # Anything that isn't text/html is ignored
+##                content_type = f.info().get('content-type')
+##                if content_type is None or \
+##                   not content_type.startswith("text/html"):
+##                    self.bad_urls["url:non_html"] += (url,)
+##                    return ["url:non_html"]
 
                 page = f.read()
                 headers = str(f.info())
                 f.close()
-            except socket.error:
+            except (socket.error, ValueError):
                 # This is probably a temporary error, like a timeout.
                 # For now, just bail out.
                 return []
-            
+
             fake_message_string = headers + "\r\n" + page
 
             # Retrieving the same messages over and over again will tire
@@ -760,7 +846,7 @@ class Classifier:
         # would become http://massey.ac.nz and http://id.example.com
         # would become http://example.com
         url += '/'
-        domain = url.split('/', 1)[0]
+        domain, garbage = url.split('/', 1)
         parts = domain.split('.')
         if len(parts) > 2:
             base_domain = parts[-2] + '.' + parts[-1]

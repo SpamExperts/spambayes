@@ -20,14 +20,20 @@ To Do:
 import sys, os
 
 try:
-    _
+    True, False
 except NameError:
+    # Maintain compatibility with Python 2.2
+    True, False = 1, 0
+
+try:
+    _("")
+except (NameError, TypeError):
     _ = lambda arg: arg
 
-__all__ = ['options', '_']
+__all__ = ('options', '_')
 
 # Grab the stuff from the core options class.
-from spambayes.OptionsClass import *
+from OptionsClass import *
 
 # A little magic.  We'd like to use ZODB as the default storage,
 # because we've had so many problems with bsddb, and we'd like to swap
@@ -91,6 +97,16 @@ defaults = {
      to use, if check_octets is set to true."""),
      INTEGER, RESTORE),
 
+    ("max_token_length", _("Maximum length of a token"), 0,
+     _("""Some storage engines may have a maximum length for tokens, and if
+     longer tokens are used then issues working with multiple storage types
+     can occur. If this is non-zero, then truncate all tokens at this many
+     characters. If the use_bigrams options is enabled, then bigram tokens
+     are truncated at *half* this length, to allow two tokens inside of the
+     bigram token, with the maximum length of the second token reduced by a
+     further 3 characters to allow space for the bi: prefix."""),
+     INTEGER, RESTORE),
+
     ("x-short_runs", _("Count runs of short 'words'"), False,
      _("""(EXPERIMENTAL) If true, generate tokens based on max number of
      short word runs. Short words are anything of length < the
@@ -104,6 +120,13 @@ defaults = {
      Requires PyDNS (http://pydns.sourceforge.net/)."""),
      BOOLEAN, RESTORE),
 
+    ("x-lookup_ip_limit", _("x-lookup_ip IP limit"), 100,
+     _("""(EXPERIMENTAL) Process at most this many IPs with the x-lookup_ip
+     system.  If zero, then there is no limit (to disable, set x-lookup_ip to
+     False).  If not set, then a message with a very large number of
+     URLs may take a very long time to tokenize."""),
+     INTEGER, RESTORE),
+
     ("lookup_ip_cache", _("x-lookup_ip cache file location"), "",
      _("""Tell SpamBayes where to cache IP address lookup information.
      Only comes into play if lookup_ip is enabled. The default
@@ -113,27 +136,33 @@ defaults = {
      dbm is untested, hence the default)."""),
      PATH, RESTORE),
 
-    ("image_size", _("Generate image size tokens"), False,
-     _("""If true, generate tokens based on the sizes of
+    ("x-image_size", _("Generate image size tokens"), False,
+     _("""(EXPERIMENTAL) If true, generate tokens based on the sizes of
      embedded images."""),
      BOOLEAN, RESTORE),
 
-    ("crack_images", _("Look inside images for text"), False,
-     _("""If true, generate tokens based on the
+    ("x-crack_images", _("Look inside images for text"), False,
+     _("""(EXPERIMENTAL) If true, generate tokens based on the
      (hopefully) text content contained in any images in each message.
      The current support is minimal, relies on the installation of
-     an OCR 'engine' (see ocr_engine.)"""),
+     an OCR 'engine' (see x-ocr_engine.)"""),
      BOOLEAN, RESTORE),
 
-    ("ocr_engine", _("OCR engine to use"), "",
-     _("""The name of the OCR engine to use.  If empty, all
+    ("x-ocr_engine", _("OCR engine to use"), "",
+     _("""(EXPERIMENTAL) The name of the OCR engine to use.  If empty, all
      supported engines will be checked to see if they are installed.
      Engines currently supported include ocrad
-     (http://www.gnu.org/software/ocrad/ocrad.html) and gocr
-     (http://jocr.sourceforge.net/download.html) and they require the
+     (http://www.gnu.org/software/ocrad/ocrad.html), gocr
+     (http://jocr.sourceforge.net/download.html), and tesseract
+     (http://tesseract-ocr.googlecode.com) and they require the
      appropriate executable be installed in either your PATH, or in the
      main spambayes directory."""),
      HEADER_VALUE, RESTORE),
+
+    ("x-rekognition_cache", _("Cache of AWS Rekognition data"), "rekognition-cache",
+     _("""If non-empty, names a file from which to read cached AWS
+     Rekognition data."""),
+     PATH, RESTORE),
 
     ("crack_image_cache", _("Cache to speed up ocr."), "",
      _("""If non-empty, names a file from which to read cached ocr info
@@ -155,6 +184,74 @@ defaults = {
     ("max_image_size", _("Max image size to try OCR-ing"), 100000,
      _("""When crack_images is enabled, this specifies the largest
      image to try OCR on."""),
+     INTEGER, RESTORE),
+
+    ("min_image_width", _("Min image width to try OCR-ing"), 100,
+     _("""When crack_images is enabled, this specifies the largest
+     image to try OCR on."""),
+     INTEGER, RESTORE),
+
+    ("min_image_height", _("Min image height to try OCR-ing"), 100,
+     _("""When crack_images is enabled, this specifies the largest
+     image to try OCR on."""),
+     INTEGER, RESTORE),
+
+    ("x-crack_pdfs", _("Look inside pdfs"), False,
+     _("""(EXPERIMENTAL) If true, generate tokens based on the
+     content contained in any images in each message.  If the x-crack_images
+     option is enabled, then images in the PDF will be tokenized, otherwise
+     only tokens based on the text and metadata will be generated."""),
+     BOOLEAN, RESTORE),
+
+    ("x-pdf_to_image", _("Convert PDFs to images"), False,
+     _("""(EXPERIMENTAL) If true, use ghostscript or xpdf to convert PDFs
+       to images, and then OCR them (as with the x-crack_images option).
+       This uses more memory, CPU, and disk space than the x-crack_pdfs
+       option, but it might be more reliable.  It is unlikely that enabling
+       both this option and x-crack_pdfs would be useful."""),
+     BOOLEAN, RESTORE),
+
+    ("x-pdf_to_image_paper_size", _("Default paper size for PDF conversion"), "a4",
+     _("""When x-pdf_to_image is enabled, this is the default paper size
+       passed to ghostcript."""),
+     HEADER_VALUE, RESTORE),
+
+    ("x-pdf_to_image_resolution", _("PDF conversion resolution"), 300,
+     _("""When x-pdf_to_image is enabled, this is the resolution that the
+       images are generated at.  The higher the resolution, the more detail
+       that OCR software has available, but the larger the generated files.
+       """),
+     INTEGER, RESTORE),
+
+    ("x-pdf_to_image_max_pages", _("PDF conversion max pages"), 10,
+     _("""When x-pdf_to_image is enabled, this is the maximum number of
+       pages that will be converted to images.  The higher this is, the
+       more information available to the OCR software (and clues in the
+       latter part of the PDF are not lost), but the larger the generated
+       files (the size is a combination of this option and
+       x-pdf_to_image_resolution)."""),
+     INTEGER, RESTORE),
+
+    ("x-pdf_to_image_max_pixels", _("PDF conversion max size"), 87008670,
+     _("""When x-pdf_to_image is enabled, if an image larger than this
+       size is generated and pnmscale is available, the image will be
+       scaled down to this size.  This allows max_pages and resolution
+       to be set reasonably high, but still ensure that a reasonable
+       limit is applied for files passed to OCR software.  The default
+       of 87,008,670 is 10 A4 pages at 300 dpi."""),
+     INTEGER, RESTORE),
+
+    ("x-crack_office", _("Look inside office documents"), False,
+     _("""(EXPERIMENTAL) If true, generate tokens based on the
+     content contained in any office docuemnts in each message.  This
+     includes Microsoft Office and OpenOffice documents.  This requires
+     OpenOffice (which does the initial conversion), which must be listening
+     for connections."""),
+     BOOLEAN, RESTORE),
+
+    ("x-openoffice_port", _("OpenOffice port"), 2002,
+     _("""When x-crack_office is enabled, OpenOffice must be running.
+       This is the port on which it is set to listen."""),
      INTEGER, RESTORE),
 
     ("count_all_header_lines", _("Count all header lines"), False,
@@ -264,7 +361,82 @@ defaults = {
      the ability to reduce the nine tokens to one. (This option has no
      effect if 'Search for Habeas Headers' is False)"""),
      BOOLEAN, RESTORE),
-  ),
+
+    ("x-tokenize-images", _("Tokenize images using PIL"), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-size", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-width", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-height", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-format", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-mode", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-extrema", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-count", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-sum", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-sum2", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-mean", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-median", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-rms", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-var", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-stddev", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-histogram", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-features", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-numbers", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ("x-image-colour-histogram", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+
+    ("x-count_short_runs", _(""), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+
+    ("x-replace_invisible_html",
+     _("Replaces invisible html text and adds tokens with the type of hiding"),
+     False, _("""(EXPERIMENTAL) """), BOOLEAN, RESTORE),
+
+    ("x-invisible_clear_plain", _("Clear plain parts after finding invisible tokens"), 0.0,
+     _("""If more than this many invisible tokens are found, then skip
+     looking for tokens in text/plain parts."""),
+     REAL, RESTORE),
+
+    ("x-classify_message_parts", _("Add tokens for any included messages"), False,
+     _("""(EXPERIMENTAL) """),
+     BOOLEAN, RESTORE),
+    ),
 
   # These options are all experimental; it seemed better to put them into
   # their own category than have several interdependant experimental options.
@@ -278,6 +450,18 @@ defaults = {
      score outside the 'unsure' range, then they are added to the
      tokens for the message.  This should be particularly effective
      for messages that contain only a single URL and no other text."""),
+     BOOLEAN, RESTORE),
+
+    ("x-slurp_images", _("Tokenize image content at the end of URLs"), False,
+     _("""(EXPERIMENTAL)"""),
+     BOOLEAN, RESTORE),
+
+    ("x-slurp_pdfs", _("Tokenize PDF/PS content at the end of URLs"), False,
+     _("""(EXPERIMENTAL)"""),
+     BOOLEAN, RESTORE),
+
+    ("x-slurp_office_docs", _("Tokenize office document content at the end of URLs"), False,
+     _("""(EXPERIMENTAL)"""),
      BOOLEAN, RESTORE),
 
     ("x-cache_expiry_days", _("Number of days to store URLs in cache"), 7,
@@ -603,8 +787,8 @@ defaults = {
     ("persistent_use_database", _("Database backend"), DB_TYPE[0],
      _("""SpamBayes can use either a ZODB or dbm database (quick to score
      one message) or a pickle (quick to train on huge amounts of messages).
-     There is also (experimental) ability to use a mySQL or PostgresSQL
-     database."""),
+     There is also (currently experimental) the ability to use a mySQL or
+     PostgrepSQL database."""),
      ("zeo", "zodb", "cdb", "mysql", "pgsql", "dbm", "pickle"), RESTORE),
 
     ("persistent_storage_file", _("Storage file name"), DB_TYPE[1],
@@ -648,21 +832,6 @@ defaults = {
      PATH, DO_NOT_RESTORE),
 
     ("unknown_cache", _("Unknown cache directory"), "pop3proxy-unknown-cache",
-     _("""Directory that SpamBayes should cache unclassified messages in.
-     If this does not exist, it will be created."""),
-     PATH, DO_NOT_RESTORE),
-
-    ("core_spam_cache", _("Spam cache directory"), "core-spam-cache",
-     _("""Directory that SpamBayes should cache spam in.  If this does
-     not exist, it will be created."""),
-     PATH, DO_NOT_RESTORE),
-
-    ("core_ham_cache", _("Ham cache directory"), "core-ham-cache",
-     _("""Directory that SpamBayes should cache ham in.  If this does
-     not exist, it will be created."""),
-     PATH, DO_NOT_RESTORE),
-
-    ("core_unknown_cache", _("Unknown cache directory"), "core-unknown-cache",
      _("""Directory that SpamBayes should cache unclassified messages in.
      If this does not exist, it will be created."""),
      PATH, DO_NOT_RESTORE),
@@ -718,7 +887,7 @@ defaults = {
     # three words:
     ("header_spam_string", _("Spam disposition name"), _("spam"),
      _("""The header that Spambayes inserts into each email has a name,
-     (Classification header name, above), and a value.  If the classifier
+     (Classification eader name, above), and a value.  If the classifier
      determines that this email is probably spam, it places a header named
      as above with a value as specified by this string.  The default
      value should work just fine, but you may change it to anything
@@ -842,33 +1011,28 @@ defaults = {
   # you must specify the same number of ports in pop3proxy_ports.
   "pop3proxy" : (
     ("remote_servers", _("Remote Servers"), (),
-     _("""\
-     The SpamBayes POP3 proxy intercepts incoming email and classifies it
-     before sending it on to your email client.  You need to specify which
-     POP3 server(s) and port(s) you wish it to connect to - a POP3 server
-     address typically looks like 'pop3.myisp.net:110' where
-     'pop3.myisp.net' is the name of the computer where the POP3 server runs
-     and '110' is the port on which the POP3 server listens.  The other port
-     you might find is '995', which is used for secure POP3.  If you use
-     more than one server, simply separate their names with commas.  For
-     example:  'pop3.myisp.net:110,pop.gmail.com:995'.  You can get
-     these server names and port numbers from your existing email
-     configuration, or from your ISP or system administrator.  If you are
-     using Web-based email, you can't use the SpamBayes POP3 proxy (sorry!).
-     In your email client's configuration, where you would normally put your
-     POP3 server address, you should now put the address of the machine
-     running SpamBayes.
-"""),
+     _("""The SpamBayes POP3 proxy intercepts incoming email and classifies
+     it before sending it on to your email client.  You need to specify
+     which POP3 server(s) you wish it to intercept - a POP3 server
+     address typically looks like "pop3.myisp.net".  If you use more than
+     one server, simply separate their names with commas.  You can get
+     these server names from your existing email configuration, or from
+     your ISP or system administrator.  If you are using Web-based email,
+     you can't use the SpamBayes POP3 proxy (sorry!).  In your email
+     client's configuration, where you would normally put your POP3 server
+     address, you should now put the address of the machine running
+     SpamBayes."""),
      SERVER, DO_NOT_RESTORE),
 
     ("listen_ports", _("SpamBayes Ports"), (),
-     _("""\
-     Each monitored POP3 server must be assigned to a different port in the
-     SpamBayes POP3 proxy.  You need to configure your email client to
-     connect to this port instead of the actual remote POP3 server.  If you
-     don't know what port to use, try 8110 and go up from there.  If you
-     have two servers, your list of listen ports might then be '8110,8111'.
-"""),
+     _("""Each POP3 server that is being monitored must be assigned to a
+     'port' in the SpamBayes POP3 proxy.  This port must be different for
+     each monitored server, and there must be a port for
+     each monitored server.  Again, you need to configure your email
+     client to use this port.  If there are multiple servers, you must
+     specify the same number of ports as servers, separated by commas.
+     If you don't know what to use here, and you only have one server,
+     try 110, or if that doesn't work, try 8110."""),
      SERVER, DO_NOT_RESTORE),
 
     ("allow_remote_connections", _("Allowed remote POP3 connections"), "localhost",
@@ -1184,7 +1348,7 @@ defaults = {
      be moved.  However, if you wish to have ham messages moved, you can
      select a folder here."""),
      IMAP_FOLDER, DO_NOT_RESTORE),
-    
+
     ("ham_train_folders", _("Folders with mail to be trained as ham"), (),
      _("""Comma delimited list of folders that will be examined for messages
      to train as ham."""),
@@ -1298,18 +1462,11 @@ defaults = {
      _("""If possible, the user interface should use a language from this
      list (in order of preference)."""),
      r"\w\w(?:_\w\w)?", RESTORE),
+
+    ("lazy_re", _("Lazily compile regular expressions"), False,
+     _("""Best if only tokenizing once."""),
+     BOOLEAN, RESTORE),
   ),
-  "Plugin": (
-    ("xmlrpc_path", _("XML-RPC path"), "/sbrpc",
-     _("""The path to respond to."""),
-     r"[\w]+", RESTORE),
-    ("xmlrpc_host", _("XML-RPC host"), "localhost",
-     _("""The host to listen on."""),
-     SERVER, RESTORE),
-    ("xmlrpc_port", _("XML-RPC port"), 8001,
-     _("""The port to listen on."""),
-     r"[\d]+", RESTORE),
-    ),
 }
 
 # `optionsPathname` is the pathname of the last ini file in the list.
@@ -1360,7 +1517,7 @@ def load_options():
                 # in the current directory, and no win32 extensions installed
                 # to locate the "user" directory - seeing things are so lamely
                 # setup, it is worth printing a warning
-                print >> sys.stderr, "NOTE: We can not locate an INI file " \
+                print >>sys.stderr, "NOTE: We can not locate an INI file " \
                       "for SpamBayes, and the Python for Windows extensions " \
                       "are not installed, meaning we can't locate your " \
                       "'user' directory.  An empty configuration file at " \
@@ -1387,7 +1544,7 @@ def load_options():
 
 def get_pathname_option(section, option):
     """Return the option relative to the path specified in the
-    gloabl optionsPathname, unless it is already an absolute path."""
+    global optionsPathname, unless it is already an absolute path."""
     filename = os.path.expanduser(options.get(section, option))
     if os.path.isabs(filename):
         return filename

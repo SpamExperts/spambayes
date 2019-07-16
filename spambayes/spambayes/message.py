@@ -73,6 +73,15 @@ from __future__ import generators
 __author__ = "Tim Stone <tim@fourstonesExpressions.com>"
 __credits__ = "Mark Hammond, Tony Meyer, all the spambayes contributors."
 
+try:
+    True, False
+except NameError:
+    # Maintain compatibility with Python 2.2
+    True, False = 1, 0
+    def bool(val):
+        return not not val
+
+import os
 import sys
 import types
 import time
@@ -80,20 +89,49 @@ import math
 import re
 import errno
 import shelve
+import logging
 import warnings
-import cPickle as pickle
+try:
+    import cPickle as pickle
+except ImportError:
+    import pickle
 import traceback
 
-import email.Message
-import email.Parser
-import email.Header
-import email.Generator
+import email
+try:
+    import email.message
+except ImportError:
+    # Handle Python 2.4
+    import email.Message as email_message
+    email.message = email_message
+    del email_message
+try:
+    import email.parser
+except ImportError:
+    # Handle Python 2.4
+    import email.Parser as email_parser
+    email.parser = email_parser
+    del email_parser
+try:
+    import email.header
+except ImportError:
+    # Handle Python 2.4
+    import email.Header as email_header
+    email.header = email_header
+    del email_header
+try:
+    import email.generator
+except ImportError:
+    # Handle Python 2.4
+    import email.Generator as email_generator
+    email.generator = email_generator
+    del email_generator
 
+import spambayes.sb_logging
 from spambayes import storage
 from spambayes import dbmstorage
+from spambayes.Options import options, get_pathname_option
 from spambayes.tokenizer import tokenize
-from spambayes.Options import options
-from spambayes.safepickle import pickle_read, pickle_write
 
 try:
     import cStringIO as StringIO
@@ -107,6 +145,9 @@ STATS_STORAGE_KEY = "Persistent statistics"
 PERSISTENT_HAM_STRING = 'h'
 PERSISTENT_SPAM_STRING = 's'
 PERSISTENT_UNSURE_STRING = 'u'
+
+spambayes.sb_logging.setup()
+logger = logging.getLogger('spambayes')
 
 class MessageInfoBase(object):
     def __init__(self, db_name=None):
@@ -208,20 +249,25 @@ class MessageInfoPickle(MessageInfoBase):
 
     def load(self):
         try:
-            self.db = pickle_read(self.db_name)
+            fp = open(self.db_name, 'rb')
         except IOError, e:
             if e.errno == errno.ENOENT:
                 # New pickle
                 self.db = {}
             else:
                 raise
+        else:
+            self.db = pickle.load(fp)
+            fp.close()
 
     def close(self):
         # we keep no resources open - nothing to do
         pass
 
     def store(self):
-        pickle_write(self.db_name, self.db, self.mode)
+        fp = open(self.db_name, 'wb')
+        pickle.dump(self.db, fp, self.mode)
+        fp.close()
 
 class MessageInfoDB(MessageInfoBase):
     def __init__(self, db_name, mode='c'):
@@ -247,8 +293,7 @@ class MessageInfoDB(MessageInfoBase):
     def close(self):
         # Close our underlying database.  Better not assume all databases
         # have close functions!
-        def noop():
-            pass
+        def noop(): pass
         getattr(self.db, "close", noop)()
         getattr(self.dbm, "close", noop)()
 
@@ -275,7 +320,21 @@ class MessageInfoZODB(storage.ZODBClassifier):
     ClassifierClass = _PersistentMessageInfo
     def __init__(self, db_name, mode='c'):
         self.nham = self.nspam = 0 # Only used for debugging prints
-        storage.ZODBClassifier.__init__(self, db_name, mode)
+        try:
+            storage.ZODBClassifier.__init__(self, db_name, mode)
+        except Exception, e:
+            print >> sys.stderr, "Cannot open messageinfo db.  " \
+                  "Recreating.  This will cause messages to be " \
+                  "re-downloaded, re-classified, all stats to vanish, etc."
+            print >> sys.stderr, str(e)
+            import traceback
+            traceback.print_exc()
+            try:
+                self.close()
+            except Exception:
+                pass
+            os.remove(db_name)
+            storage.ZODBClassifier.__init__(self, db_name, mode)
         self.classifier.store = self.store
         self.db = self.classifier
     def __setattr__(self, att, value):
@@ -300,30 +359,32 @@ def open_storage(data_source_name, db_type="dbm", mode=None):
         klass, supports_mode, unused = _storage_types[db_type]
     except KeyError:
         raise storage.NoSuchClassifierError(db_type)
+    logger.debug("Opening %s messageinfo database (%s:%s)" %
+                 (data_source_name, db_type, mode))
     if supports_mode and mode is not None:
         return klass(data_source_name, mode)
     else:
         return klass(data_source_name)
 
-def database_type():
+def database_type(default="pickle"):
     dn = ("Storage", "messageinfo_storage_file")
     # The storage options here may lag behind those in storage.py,
     # so we try and be more robust.  If we can't use the same storage
     # method, then we fall back to pickle.
     nm, typ = storage.database_type((), default_name=dn)
     if typ not in _storage_types.keys():
-        typ = "pickle"
+        typ = default
     return nm, typ
 
 
-class Message(object, email.Message.Message):
-    '''An email.Message.Message extended for SpamBayes'''
+class Message(object, email.message.Message):
+    '''An email.message.Message extended for SpamBayes'''
 
     def __init__(self, id=None):
-        email.Message.Message.__init__(self)
+        email.message.Message.__init__(self)
 
         # persistent state
-        # (non-persistent state includes all of email.Message.Message state)
+        # (non-persistent state includes all of email.message.Message state)
         self.stored_attributes = ['c', 't', 'date_modified', ]
         self.getDBKey = self.getId
         self.id = None
@@ -387,20 +448,19 @@ class Message(object, email.Message.Message):
 
     def setId(self, id):
         if self.id and self.id != id:
-            raise ValueError, ("MsgId has already been set,"
-                               " cannot be changed %r %r") % (self.id, id)
+            raise ValueError("MsgId has already been set, cannot be changed" + `self.id` + `id`)
 
         if id is None:
-            raise ValueError, "MsgId must not be None"
+            raise ValueError("MsgId must not be None")
 
         if not type(id) in types.StringTypes:
-            raise TypeError, "Id must be a string"
+            raise TypeError("Id must be a string")
 
         if id == STATS_START_KEY:
-            raise ValueError, "MsgId must not be " + STATS_START_KEY
+            raise ValueError("MsgId must not be " + STATS_START_KEY)
 
         if id == STATS_STORAGE_KEY:
-            raise ValueError, "MsgId must not be " + STATS_STORAGE_KEY
+            raise ValueError("MsgId must not be " + STATS_STORAGE_KEY)
 
         self.id = id
         self.message_info_db.load_msg(self)
@@ -423,13 +483,13 @@ class Message(object, email.Message.Message):
         # append function), but does not, so we do it here
         try:
             fp = StringIO.StringIO()
-            g = email.Generator.Generator(fp, mangle_from_=mangle_from_)
+            g = email.generator.Generator(fp, mangle_from_=mangle_from_)
             g.flatten(self, unixfrom)
             return self._force_CRLF(fp.getvalue())
         except TypeError:
             parts = []
             for part in self.get_payload():
-                parts.append(email.Message.Message.as_string(part, unixfrom))
+                parts.append(email.message.Message.as_string(part, unixfrom))
             return self._force_CRLF("\n".join(parts))
 
     def modified(self):
@@ -438,26 +498,26 @@ class Message(object, email.Message.Message):
 
     def GetClassification(self):
         if self.c == PERSISTENT_SPAM_STRING:
-            return options['Headers', 'header_spam_string']
+            return options['Headers','header_spam_string']
         elif self.c == PERSISTENT_HAM_STRING:
-            return options['Headers', 'header_ham_string']
+            return options['Headers','header_ham_string']
         elif self.c == PERSISTENT_UNSURE_STRING:
-            return options['Headers', 'header_unsure_string']
+            return options['Headers','header_unsure_string']
         return None
 
     def RememberClassification(self, cls):
         # this must store state independent of options settings, as they
         # may change, which would really screw this database up
 
-        if cls == options['Headers', 'header_spam_string']:
+        if cls == options['Headers','header_spam_string']:
             self.c = PERSISTENT_SPAM_STRING
-        elif cls == options['Headers', 'header_ham_string']:
+        elif cls == options['Headers','header_ham_string']:
             self.c = PERSISTENT_HAM_STRING
-        elif cls == options['Headers', 'header_unsure_string']:
+        elif cls == options['Headers','header_unsure_string']:
             self.c = PERSISTENT_UNSURE_STRING
         else:
-            raise ValueError, \
-                  "Classification must match header strings in options"
+            raise ValueError(\
+                  "Classification must match header strings in options")
         self.modified()
 
     def GetTrained(self):
@@ -493,19 +553,19 @@ class SBHeaderMessage(Message):
 
     def setIdFromPayload(self):
         try:
-            self.setId(self[options['Headers', 'mailid_header_name']])
+            self.setId(self[options['Headers','mailid_header_name']])
         except ValueError:
             return None
 
         return self.id
 
     def setDisposition(self, prob):
-        if prob < options['Categorization', 'ham_cutoff']:
-            disposition = options['Headers', 'header_ham_string']
-        elif prob > options['Categorization', 'spam_cutoff']:
-            disposition = options['Headers', 'header_spam_string']
+        if prob < options['Categorization','ham_cutoff']:
+            disposition = options['Headers','header_ham_string']
+        elif prob > options['Categorization','spam_cutoff']:
+            disposition = options['Headers','header_spam_string']
         else:
-            disposition = options['Headers', 'header_unsure_string']
+            disposition = options['Headers','header_unsure_string']
         self.RememberClassification(disposition)
 
     def addSBHeaders(self, prob, clues):
@@ -513,33 +573,33 @@ class SBHeaderMessage(Message):
         add optional headers if needed."""
         self.setDisposition(prob)
         disposition = self.GetClassification()
-        self[options['Headers', 'classification_header_name']] = disposition
+        self[options['Headers','classification_header_name']] = disposition
 
-        if options['Headers', 'include_score']:
+        if options['Headers','include_score']:
             disp = "%.*f" % (options["Headers", "header_score_digits"], prob)
             if options["Headers", "header_score_logarithm"]:
-                if prob <= 0.005 and prob > 0.0:
-                    x = -math.log10(prob)
-                    disp += " (%d)" % x
-                if prob >= 0.995 and prob < 1.0:
-                    x = -math.log10(1.0-prob)
-                    disp += " (%d)" % x
-            self[options['Headers', 'score_header_name']] = disp
+                if prob<=0.005 and prob>0.0:
+                    x=-math.log10(prob)
+                    disp += " (%d)"%x
+                if prob>=0.995 and prob<1.0:
+                    x=-math.log10(1.0-prob)
+                    disp += " (%d)"%x
+            self[options['Headers','score_header_name']] = disp
 
-        if options['Headers', 'include_thermostat']:
+        if options['Headers','include_thermostat']:
             thermostat = '**********'
-            self[options['Headers', 'thermostat_header_name']] = \
+            self[options['Headers','thermostat_header_name']] = \
                                thermostat[:int(prob*10)]
 
-        if options['Headers', 'include_evidence']:
-            hco = options['Headers', 'clue_mailheader_cutoff']
+        if options['Headers','include_evidence']:
+            hco = options['Headers','clue_mailheader_cutoff']
             sco = 1 - hco
             evd = []
             for word, score in clues:
                 if (word == '*H*' or word == '*S*' \
                     or score <= hco or score >= sco):
                     if isinstance(word, types.UnicodeType):
-                        word = email.Header.Header(word,
+                        word = email.header.Header(word,
                                                    charset='utf-8').encode()
                     try:
                         evd.append("%r: %.2f" % (word, score))
@@ -547,10 +607,10 @@ class SBHeaderMessage(Message):
                         evd.append("%r: %s" % (word, score))
 
             # Line-wrap this header, because it can get very long.  We don't
-            # use email.Header.Header because that can explode with unencoded
+            # use email.header.Header because that can explode with unencoded
             # non-ASCII characters.  We can't use textwrap because that's 2.3.
             wrappedEvd = []
-            headerName = options['Headers', 'evidence_header_name']
+            headerName = options['Headers','evidence_header_name']
             lineLength = len(headerName) + len(': ')
             for component, index in zip(evd, range(len(evd))):
                 wrappedEvd.append(component)
@@ -563,10 +623,10 @@ class SBHeaderMessage(Message):
                         lineLength = 8
             self[headerName] = "".join(wrappedEvd)
 
-        if options['Headers', 'add_unique_id']:
-            self[options['Headers', 'mailid_header_name']] = self.id
+        if options['Headers','add_unique_id']:
+            self[options['Headers','mailid_header_name']] = self.id
 
-        self.addNotations()            
+        self.addNotations()
 
     def addNotations(self):
         """Add the appropriate string to the subject: and/or to: header.
@@ -577,6 +637,10 @@ class SBHeaderMessage(Message):
         this is it.
         """
         disposition = self.GetClassification()
+        self.notateTo(disposition)
+        self.notateSubject(disposition)
+
+    def notateTo(self, disposition):
         # options["Headers", "notate_to"] (and notate_subject) can be
         # either a single string (like "spam") or a tuple (like
         # ("unsure", "spam")).  In Python 2.3 checking for a string in
@@ -599,7 +663,9 @@ class SBHeaderMessage(Message):
             except KeyError:
                 self["To"] = address
 
-        if isinstance(options["Headers", "notate_subject"], types.StringTypes):
+    def notateSubject(self, disposition):
+        if isinstance(options["Headers", "notate_subject"],
+                      types.StringTypes):
             notate_subject = (options["Headers", "notate_subject"],)
         else:
             notate_subject = options["Headers", "notate_subject"]
@@ -654,14 +720,13 @@ class SBHeaderMessage(Message):
         SpamBayes headers.  This can be used to restore the values
         after using the delSBHeaders() function."""
         headers = {}
-        for header_name in [options['Headers', 'classification_header_name'],
-                            options['Headers', 'mailid_header_name'],
-                            (options['Headers', 'classification_header_name']
-                             + "-ID"),
-                            options['Headers', 'thermostat_header_name'],
-                            options['Headers', 'evidence_header_name'],
-                            options['Headers', 'score_header_name'],
-                            options['Headers', 'trained_header_name'],
+        for header_name in [options['Headers','classification_header_name'],
+                            options['Headers','mailid_header_name'],
+                            options['Headers','classification_header_name'] + "-ID",
+                            options['Headers','thermostat_header_name'],
+                            options['Headers','evidence_header_name'],
+                            options['Headers','score_header_name'],
+                            options['Headers','trained_header_name'],
                             ]:
             value = self[header_name]
             if value is not None:
@@ -669,13 +734,13 @@ class SBHeaderMessage(Message):
         return headers
 
     def delSBHeaders(self):
-        del self[options['Headers', 'classification_header_name']]
-        del self[options['Headers', 'mailid_header_name']]
-        del self[options['Headers', 'classification_header_name'] + "-ID"]  # test mode header
-        del self[options['Headers', 'thermostat_header_name']]
-        del self[options['Headers', 'evidence_header_name']]
-        del self[options['Headers', 'score_header_name']]
-        del self[options['Headers', 'trained_header_name']]
+        del self[options['Headers','classification_header_name']]
+        del self[options['Headers','mailid_header_name']]
+        del self[options['Headers','classification_header_name'] + "-ID"]  # test mode header
+        del self[options['Headers','thermostat_header_name']]
+        del self[options['Headers','evidence_header_name']]
+        del self[options['Headers','score_header_name']]
+        del self[options['Headers','trained_header_name']]
         # Also delete notations - typically this is called just before
         # training, and we don't want them there for that.
         self.delNotations()
@@ -696,7 +761,7 @@ def insert_exception_header(string_msg, msg_id=None):
     detailLines = details.strip().split('\n')
     dottedDetails = '\n.'.join(detailLines)
     headerName = 'X-Spambayes-Exception'
-    header = email.Header.Header(dottedDetails, header_name=headerName)
+    header = email.header.Header(dottedDetails, header_name=headerName)
 
     # Insert the exception header, and optionally also insert the id header,
     # otherwise we might keep doing this message over and over again.

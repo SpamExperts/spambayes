@@ -75,9 +75,12 @@ i.e. if multiple is None, then only one value is allowed.  Otherwise
 multiple is used in a re.split() to separate the input.
 """
 
-import sys
 import os
+import re
+import sys
+import types
 import shutil
+import locale
 from tempfile import TemporaryFile
 
 try:
@@ -85,12 +88,29 @@ try:
 except ImportError:
     import StringIO
 
-import re
-import types
-import locale
-from textwrap import wrap
+try:
+    True, False, bool
+except NameError:
+    # Maintain compatibility with Python 2.2
+    True, False = 1, 0
+    def bool(val):
+        return not not val
 
-__all__ = ['OptionsClass',
+try:
+    import textwrap
+except ImportError:
+    # textwrap was added in 2.3
+    # We only use this for printing out errors and docstrings, so
+    # it doesn't need to be great (if you want it great, get a more
+    # recent Python!).  So we do it the dumb way; the textwrap code
+    # could be duplicated here if anyone cared.
+    def wrap(s):
+        length = 40
+        return [s[i:i+length].strip() for i in xrange(0, len(s), length)]
+else:
+    wrap = textwrap.wrap
+
+__all__ = ('OptionsClass',
            'HEADER_NAME', 'HEADER_VALUE',
            'INTEGER', 'REAL', 'BOOLEAN',
            'SERVER', 'PORT', 'EMAIL_ADDRESS',
@@ -98,7 +118,7 @@ __all__ = ['OptionsClass',
            'IMAP_FOLDER', 'IMAP_ASTRING',
            'RESTORE', 'DO_NOT_RESTORE', 'IP_LIST',
            'OCRAD_CHARSET',
-          ]
+          )
 
 MultiContainerTypes = (types.TupleType, types.ListType)
 
@@ -177,7 +197,9 @@ class Option(object):
                 # This is very strict!  If the value is meant to be
                 # a real number and an integer is passed in, it will fail.
                 # (So pass 1. instead of 1, for example)
-                return False
+                if type(value) not in types.StringTypes or \
+                   type(self.value) not in types.StringTypes:
+                    return False
             if value == "":
                 # A blank string is always ok.
                 return True
@@ -272,15 +294,14 @@ class Option(object):
                 return False
             raise TypeError, self.name + " must be True or False"
         if self.multiple_values_allowed():
-            # This will fall apart if the allowed_value is a tuple,
-            # but not a homogenous one...
+            # XXX This will fall apart if the allowed_value is a tuple,
+            # XXX but not a homogenous one...
             if isinstance(self.allowed_values, types.StringTypes):
                 vals = list(self._split_values(value))
+            elif isinstance(value, types.TupleType):
+                vals = list(value)
             else:
-                if isinstance(value, types.TupleType):
-                    vals = list(value)
-                else:
-                    vals = value.split()
+                vals = value.split()
             if len(self.default_value) > 0:
                 to_type = type(self.default_value[0])
             else:
@@ -341,7 +362,8 @@ class Option(object):
                 else:
                     v0 = self.value[0]
                     v1 = self.value[1]
-                    for sep in [' ', ',', ':', ';', '/', '\\', None]:
+                    for sep in [' ', ',', ':', ';', '/', '\\', '\x07',
+                                None]:
                         # we know at this point that len(self.value) is at
                         # least two, because len==0 and len==1 were dealt
                         # with as special cases
@@ -647,7 +669,7 @@ class OptionsClass(object):
         '''Set an option.'''
         if self.conversion_table.has_key((sect, opt.lower())):
             sect, opt = self.conversion_table[sect, opt.lower()]
-            
+
         # Annoyingly, we have a special case.  The notate_to and
         # notate_subject allowed values have to be set to the same
         # values as the header_x_ options, but this can't be done
@@ -662,6 +684,11 @@ class OptionsClass(object):
         # For the moment, this will do.  Use a real mail client, for
         # goodness sake!
         if sect == "Headers" and opt in ("notate_to", "notate_subject"):
+            header_strings = (self.get("Headers", "header_ham_string"),
+                              self.get("Headers",
+                                       "header_spam_string"),
+                              self.get("Headers",
+                                       "header_unsure_string"))
             self._options[sect, opt.lower()].set(val)
             return
         if self.is_valid(sect, opt, val):
@@ -798,7 +825,7 @@ class OptionsClass(object):
     def display_full(self, section=None, option=None):
         '''Display options including all information.'''
         return self._display_nice(section, option, 'as_nice_string')
-        
+
     def output_for_docs(self, section=None, option=None):
         '''Return output suitable for inserting into documentation for
         the available options.'''
@@ -834,10 +861,9 @@ IMAP_FOLDER = r"[^,]+"
 #   where number represents the number of CHAR8 octets
 # but this is too complex for us at the moment.
 IMAP_ASTRING = []
-for _i in xrange(1, 128):
-    if chr(_i) not in ['"', '\\', '\n', '\r']:
-        IMAP_ASTRING.append(chr(_i))
-del _i
+for i in range(1, 128):
+    if not chr(i) in ['"', '\\', '\n', '\r']:
+        IMAP_ASTRING.append(chr(i))
 IMAP_ASTRING = r"\"?[" + re.escape(''.join(IMAP_ASTRING)) + r"]+\"?"
 
 # Similarly, each option must specify whether it should be reset to
