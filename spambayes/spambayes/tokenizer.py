@@ -627,13 +627,30 @@ def imageparts(msg):
                   part.get_content_type().startswith('image/'),
                   msg.walk())
 
-has_highbit_char = re.compile(r"[\x80-\xff]").search
+
+class LazyRe(object):
+    def __init__(self, *args, **kwargs):
+        self.args = args
+        self.kwargs = kwargs
+
+    def __getattr__(self, attr):
+        return getattr(re.compile(*self.args, **self.kwargs), attr)
+
+
+def re_compile(*args, **kwargs):
+    """Lazily compile a regular expression."""
+    if global_options["globals", "lazy_re"]:
+        return LazyRe(*args, **kwargs)
+    return re.compile(*args, **kwargs)
+
+
+has_highbit_char = re_compile(r"[\x80-\xff]").search
 
 # Cheap-ass gimmick to probabilistically find HTML/XML tags.
 # Note that <style and HTML comments are handled by crack_html_style()
 # and crack_html_comment() instead -- they can be very long, and long
 # minimal matches have a nasty habit of blowing the C stack.
-html_re = re.compile(r"""
+html_re = re_compile(r"""
     <
     (?![\s<>])  # e.g., don't match 'a < b' or '<<<' or 'i<<5' or 'a<>b'
     # guessing that other tags are usually "short"
@@ -658,27 +675,28 @@ html_re = re.compile(r"""
 #   Received: (from itin@localhost)
 #       by manatee.mojam.com (8.12.1-20030917/8.12.1/Submit) id hBIEQFxF018044
 #       for skip@manatee.mojam.com; Thu, 18 Dec 2003 08:26:15 -0600
-received_host_re = re.compile(r'from ([a-z0-9._-]+[a-z])[)\s]')
+received_host_re = re_compile(r'from ([a-z0-9._-]+[a-z])[)\s]',
+                              re.IGNORECASE)
 # 99% of the time, the receiving host places the sender's ip address in
 # square brackets as it should, but every once in awhile it turns up in
 # parens.  Yahoo seems to be guilty of this minor infraction:
 #   Received: from unknown (66.218.66.218)
 #       by m19.grp.scd.yahoo.com with QMQP; 19 Dec 2003 04:06:53 -0000
-received_ip_re = re.compile(r'[[(]((\d{1,3}\.?){4})[])]')
+received_ip_re = re_compile(r'[[(]((\d{1,3}\.?){4})[])]')
 
-received_nntp_ip_re = re.compile(r'((\d{1,3}\.?){4})')
+received_nntp_ip_re = re_compile(r'((\d{1,3}\.?){4})')
 
-message_id_re = re.compile(r'\s*<[^@]+@([^>]+)>\s*')
+message_id_re = re_compile(r'\s*<[^@]+@([^>]+)>\s*')
 
 # I'm usually just splitting on whitespace, but for subject lines I want to
 # break things like "Python/Perl comparison?" up.  OTOH, I don't want to
 # break up the unitized numbers in spammish subject phrases like "Increase
 # size 79%" or "Now only $29.95!".  Then again, I do want to break up
 # "Python-Dev".  Runs of punctuation are also interesting in subject lines.
-subject_word_re = re.compile(r"[\w\x80-\xff$.%]+")
-punctuation_run_re = re.compile(r'\W+')
+subject_word_re = re_compile(r"[\w\x80-\xff$.%]+")
+punctuation_run_re = re_compile(r'\W+')
 
-fname_sep_re = re.compile(r'[/\\:]')
+fname_sep_re = re_compile(r'[/\\:]')
 
 def crack_filename(fname):
     yield "fname:" + fname
@@ -874,7 +892,7 @@ def crack_content_xyz(msg):
 # about line length, but other than that are strict.  Group 1 is non-empty
 # after a match iff the last significant char on the line is '='; in that
 # case, it must be the last line of the base64 section.
-base64_re = re.compile(r"""
+base64_re = re_compile(r"""
     [ \t]*
     [a-zA-Z0-9+/]*
     (=*)
@@ -979,14 +997,14 @@ class Stripper(object):
 # nothing but a uuencoded money.txt; OTOH, uuencode seems to be on
 # its way out (that's an old spam).
 
-uuencode_begin_re = re.compile(r"""
+uuencode_begin_re = re_compile(r"""
     ^begin \s+
     (\S+) \s+   # capture mode
     (\S+) \s*   # capture filename
     $
 """, re.VERBOSE | re.MULTILINE)
 
-uuencode_end_re = re.compile(r"^end\s*\n", re.MULTILINE)
+uuencode_end_re = re_compile(r"^end\s*\n", re.MULTILINE)
 
 class UUencodeStripper(Stripper):
     def __init__(self):
@@ -1003,7 +1021,7 @@ crack_uuencode = UUencodeStripper().analyze
 
 # Strip and specially tokenize embedded URLish thingies.
 
-url_fancy_re = re.compile(r""" 
+url_fancy_re = re_compile(r""" 
     \b                      # the preceeding character must not be alphanumeric
     (?: 
         (?:
@@ -1017,19 +1035,19 @@ url_fancy_re = re.compile(r"""
     # be in HTML, may or may not be in quotes, etc.  If it's full of %
     # escapes, cool -- that's a clue too.
     ([^\s<>"'\x7f-\xff]+)  # capture the guts
-""", re.VERBOSE)                        # '
+""", re.VERBOSE | re.IGNORECASE)
 
-url_re = re.compile(r"""
+url_re = re_compile(r"""
     (https? | ftp)  # capture the protocol
     ://             # skip the boilerplate
     # Do a reasonable attempt at detecting the end.  It may or may not
     # be in HTML, may or may not be in quotes, etc.  If it's full of %
     # escapes, cool -- that's a clue too.
     ([^\s<>"'\x7f-\xff]+)  # capture the guts
-""", re.VERBOSE)                        # '
+""", re.VERBOSE | re.IGNORECASE)
 
 
-urlsep_re = re.compile(r"[;?:@&=+,$.]")
+urlsep_re = re_compile(r"[;?:@&=+,$.]")
 
 class URLStripper(Stripper):
     def __init__(self):
@@ -1122,7 +1140,7 @@ class URLStripper(Stripper):
                 pushclue("url:" + chunk)
         return tokens
 
-received_complaints_re = re.compile(r'\([a-z]+(?:\s+[a-z]+)+\)')
+received_complaints_re = re_compile(r'\([a-z]+(?:\s+[a-z]+)+\)')
 
 class SlurpingURLStripper(URLStripper):
     def __init__(self):
@@ -1160,14 +1178,14 @@ else:
     crack_urls = URLStripper().analyze
 
 # Nuke HTML <style gimmicks.
-html_style_start_re = re.compile(r"""
+html_style_start_re = re_compile(r"""
     < \s* style\b [^>]* >
 """, re.VERBOSE)
 
 class StyleStripper(Stripper):
     def __init__(self):
         Stripper.__init__(self, html_style_start_re.search,
-                                re.compile(r"</style>").search)
+                                re_compile(r"</style>").search)
 
 crack_html_style = StyleStripper().analyze
 
@@ -1176,8 +1194,8 @@ crack_html_style = StyleStripper().analyze
 class CommentStripper(Stripper):
     def __init__(self):
         Stripper.__init__(self,
-                          re.compile(r"<!--|<\s*comment\s*[^>]*>").search,
-                          re.compile(r"-->|</comment>").search)
+                          re_compile(r"<!--|<\s*comment\s*[^>]*>").search,
+                          re_compile(r"-->|</comment>").search)
 
 crack_html_comment = CommentStripper().analyze
 
@@ -1185,8 +1203,8 @@ crack_html_comment = CommentStripper().analyze
 class NoframesStripper(Stripper):
     def __init__(self):
         Stripper.__init__(self,
-                          re.compile(r"<\s*noframes\s*>").search,
-                          re.compile(r"</noframes\s*>").search)
+                          re_compile(r"<\s*noframes\s*>").search,
+                          re_compile(r"</noframes\s*>").search)
 
 crack_noframes = NoframesStripper().analyze
 
@@ -1196,7 +1214,7 @@ crack_noframes = NoframesStripper().analyze
 # src=cid:
 # height=0  width=0
 
-virus_re = re.compile(r"""
+virus_re = re_compile(r"""
     < /? \s* (?: script | iframe) \b
 |   \b src= ['"]? cid:
 |   \b (?: height | width) = ['"]? 0
@@ -1208,7 +1226,7 @@ def find_html_virus_clues(text):
 
 
 
-numeric_entity_re = re.compile(r'&#(\d+);')
+numeric_entity_re = re_compile(r'&#(\d+);')
 def numeric_entity_replacer(m):
     try:
         return chr(int(m.group(1)))
@@ -1216,7 +1234,7 @@ def numeric_entity_replacer(m):
         return '?'
 
 
-breaking_entity_re = re.compile(r"""
+breaking_entity_re = re_compile(r"""
     &nbsp;
 |   < (?: p
       |   br
@@ -1226,7 +1244,7 @@ breaking_entity_re = re.compile(r"""
 
 class Tokenizer:
 
-    date_hms_re = re.compile(r' (?P<hour>[0-9][0-9])'
+    date_hms_re = re_compile(r' (?P<hour>[0-9][0-9])'
                              r':(?P<minute>[0-9][0-9])'
                              r'(?::[0-9][0-9])? ')
 
